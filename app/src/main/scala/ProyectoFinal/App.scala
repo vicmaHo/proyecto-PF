@@ -10,7 +10,6 @@ import org.scalameter.withWarmer
 import org.scalameter.Warmer
 
 object App{
-
   def saludo() = "Proyecto Final"
 
   def main(args: Array[String]): Unit = {
