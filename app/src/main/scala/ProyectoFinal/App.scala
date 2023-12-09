@@ -3,15 +3,15 @@
   * Autores: <Estudiantes>
   * Profesor: Carlos A Delgado
   */
-package taller4
+package ProyectoFinal
 
 import org.scalameter.measure
 import org.scalameter.withWarmer
 import org.scalameter.Warmer
 
-object Taller4{
+object App{
 
-  def saludo() = "Taller 4 2023-II"
+  def saludo() = "Proyecto Final"
 
   def main(args: Array[String]): Unit = {
     println(saludo())
