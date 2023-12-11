@@ -9,18 +9,25 @@ class ImplAlgoritmos {
 		Seq("")
 		} else {
 		for {
-			caracter <- alfabeto
-			combinacion <- generarCombinaciones(tamano - 1)
+			caracter <- alfabeto 
+			combinacion <- generarCombinaciones(tamano - 1) 
+           
 		} yield caracter + combinacion
 		}
   	}
     
     def reconstruirCadenaIngenuo(n: Int, oraculo: Oraculo): Seq[Char] = {
         val combinaciones = generarCombinaciones(n)
-        val combinacionesFiltradas = combinaciones.filter(oraculo(_) == true)
-        val combinacion = combinacionesFiltradas.head
-        val cadenaEncontrada = combinacion.toSeq
-        cadenaEncontrada
+        // val combinacionesFiltradas = combinaciones.filter(oraculo(_) == true)
+        // val combinacion = combinacionesFiltradas.head
+        // val cadenaEncontrada = combinacion.toSeq
+        
+        val cadenaEncontrada = for {
+            cadena <- combinaciones
+            if oraculo(cadena) == true
+        } yield cadena.toSeq
+
+        cadenaEncontrada.head
         
 
         // def reconstruirCadenaAux(cadena: Seq[Char], combinaciones: Seq[String]): Seq[Char] = {

@@ -18,8 +18,8 @@ object App{
     // Pruebas de la función oraculoFunc
     val oraculo = oraculoFunc("agga")
     //println(obj.reconstruirCadenaIngenuo(4, oraculo))
-    //val combinaciones = obj.generarCombinaciones(4)
-
+    val combinaciones = obj.generarCombinaciones(4)
+    println(combinaciones)
     println(obj.reconstruirCadenaIngenuo(4, oraculo))
   }
   
