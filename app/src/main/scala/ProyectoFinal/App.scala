@@ -16,7 +16,7 @@ object App{
     def main(args: Array[String]): Unit = {
 
     // Pruebas de la función oraculoFunc
-    val n = 11
+    val n = 10
     val cadenaAleatoria = obj.crearADN(n)
     println("Cadena Aleatoria: " +cadenaAleatoria)
     println("Tamanio de la cadena: " +n)
@@ -34,9 +34,13 @@ object App{
     val timeF3 = withWarmer(new Warmer.Default) measure {
         obj.reconstruirCadenaTurbo(cadenaAleatoria.length, oraculo)
     }
+    val timeF4 = withWarmer(new Warmer.Default) measure {
+        obj.reconstruirCadenaTurboMejorada(cadenaAleatoria.length, oraculo)
+    }
 
     val promedio = timeF1.value / timeF2.value
     val promedio2 = timeF2.value / timeF3.value
+    val promedio3 = timeF3.value / timeF4.value
     
     
     //println(obj.reconstruirCadenaIngenuo(4, oraculo))
@@ -45,6 +49,7 @@ object App{
     println("Respuesta de la reconstruccion ingenua: " +obj.reconstruirCadenaIngenuo(cadenaAleatoria.length, oraculo))
     println("Respuesta de la reconstruccion mejorada: " +obj.reconstruirCadenaMejorado(cadenaAleatoria.length, oraculo))
     println("Respuesta de la reconstruccion turbo: " + obj.reconstruirCadenaTurbo(cadenaAleatoria.length, oraculo))
+    println("Respuesta de la reconstruccion turbo mejorada: " + obj.reconstruirCadenaTurboMejorada(cadenaAleatoria.length, oraculo))
     println()
     println("Tiempo de la solucion ingenua: " +timeF1.value)
     println("Tiempo de la solucion mejorada: " +timeF2.value)
@@ -52,6 +57,9 @@ object App{
     println()
     println("Tiempo de la solucion turbo: " +timeF3.value)
     println("Es realmente mejor la turbo: " + promedio2)
+    println()
+    println("Tiempo de la solucion turbo mejorada: " +timeF4.value)
+    println("Es realmente mejor la merojada: " + promedio3)
   }
   
 }
