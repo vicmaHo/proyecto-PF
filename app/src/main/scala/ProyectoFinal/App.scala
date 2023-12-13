@@ -16,7 +16,7 @@ object App{
     def main(args: Array[String]): Unit = {
 
     // Pruebas de la función oraculoFunc
-    val n = 10
+    val n = 9
     val cadenaAleatoria = obj.crearADN(n)
     println("Cadena Aleatoria: " +cadenaAleatoria)
     println("Tamanio de la cadena: " +n)

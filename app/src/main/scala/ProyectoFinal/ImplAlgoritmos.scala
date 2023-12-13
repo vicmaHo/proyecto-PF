@@ -26,15 +26,21 @@ class ImplAlgoritmos {
     
     def reconstruirCadenaIngenuo(n: Int, oraculo: Oraculo): Seq[Char] = {
         val combinaciones = generarCombinaciones(n)
+        val cadenaEncontrada = for {
+            cadena <- combinaciones
+            if oraculo(cadena) == true
+        } yield cadena.toSeq
 
-        def reconstruirCadenaAux(cadena: Seq[Char], combinaciones: Seq[String]): Seq[Char] = {
-            if (oraculo(cadena) == true) {
-                cadena
-            } else {
-                reconstruirCadenaAux(combinaciones.head.toSeq, combinaciones.tail)
-            }
-        }
-        reconstruirCadenaAux(combinaciones.head.toSeq, combinaciones.tail)
+        cadenaEncontrada.head
+
+        // def reconstruirCadenaAux(cadena: Seq[Char], combinaciones: Seq[String]): Seq[Char] = {
+        //     if (oraculo(cadena) == true) {
+        //         cadena
+        //     } else {
+        //         reconstruirCadenaAux(combinaciones.head.toSeq, combinaciones.tail)
+        //     }
+        // }
+        // reconstruirCadenaAux(combinaciones.head.toSeq, combinaciones.tail)
        
     }
 
