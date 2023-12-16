@@ -168,6 +168,65 @@ class ImplAlgoritmos {
         }
 
     }
+    def reconstruirCadenaTurboAcelerada (n : Int , oraculo : Oraculo ) : Seq [Char]= {
+        def reconstruirCadenaTurboAceleradaAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int,baseInicial:Int,potencia:Int): Seq[String] = {
+            if ( baseInicial >= n && acumulador.length > 0) {
+                acumulador
+            } else {
+                val combinaciones  = generarCombinaciones(n)
+                
+                val cadenaEncontrada = for {
+                cadena <- combinaciones
+                if oraculo(cadena) == true
+                } yield cadena
+            
+                val acumulacion = acumulador ++ cadenaEncontrada
+                val base = math.pow(2,potencia).toInt
+                reconstruirCadenaTurboAceleradaAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-base,base,potencia+1)
+                }
+        }
+
+        if(n%2 == 0){
+            val subCadenasCorrectas = reconstruirCadenaTurboAceleradaAux( Seq(), Seq(), Seq(), n/2,2,1)
+
+             val posiblesCombinaciones =  for {
+                 subCadena1 <- subCadenasCorrectas
+                 subCadena2 <- subCadenasCorrectas
+            } yield subCadena1 + subCadena2
+            
+            val vacio = new Nodo(' ', false, Nil)
+            val arbolDePosibilidades = vacio.arbolDeSufijos(posiblesCombinaciones)
+            val posibilidades = vacio.generarPosibilidades(arbolDePosibilidades)
+            val cadenaEncontrada = for {
+                 posibilidad <- posibilidades
+                 if oraculo(posibilidad) == true
+             } yield posibilidad
+
+            cadenaEncontrada.mkString
+
+                    
+        }else{
+            val subCadenasCorrectas1 = reconstruirCadenaTurboAceleradaAux( Seq(), Seq(), Seq(), n/2,2,1)
+            val subCadenasCorrectas2 = reconstruirCadenaTurboAceleradaAux( Seq(), Seq(), Seq(), n-(n/2),2,1)
+            val posiblesCombinaciones = for {
+                subCadena1 <- subCadenasCorrectas1
+                subCadena2 <- subCadenasCorrectas2
+            } yield subCadena1 + subCadena2
+            
+            val vacio = new Nodo(' ', false, Nil)
+            val arbolDePosibilidades = vacio.arbolDeSufijos(posiblesCombinaciones)
+            val posibilidades = vacio.generarPosibilidades(arbolDePosibilidades)
+            val cadenaEncontrada = for {
+                 posibilidad <- posibilidades
+                 if oraculo(posibilidad) == true
+             } yield posibilidad
+
+            cadenaEncontrada.mkString
+
+
+        }
+
+    }
 
 
 }
