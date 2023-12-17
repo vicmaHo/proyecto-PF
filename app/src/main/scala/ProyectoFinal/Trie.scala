@@ -1,4 +1,5 @@
 package ProyectoFinal
+import Oraculo._
 
 abstract class Trie{
     
@@ -24,7 +25,7 @@ abstract class Trie{
    def adicionar(t: Trie, sufijo: String): Trie = sufijo.toList match {
     case Nil => t
     case x :: xs =>
-      val nuevoHijo = Nodo(x, false, List.empty[Trie])
+      val nuevoHijo = Nodo(x, true, List.empty[Trie])
       t match {
         case Hoja(c, marcada) =>
           Nodo(c, marcada, List(adicionar(nuevoHijo, xs.mkString)))
@@ -45,7 +46,7 @@ abstract class Trie{
       case Hoja(_, _) => Seq(prefijo)
       case Nodo(_, _, hijos) =>
         if (hijos.isEmpty) {
-          // Nodo sin hijos, devolver solo el prefijo actual
+          // Nodo sin hijos, devuelve solo el prefijo actual
           Seq(prefijo)
         } else {
           hijos.flatMap(h => reconstruyendoPosibilidades(h, prefijo + raiz(h)))
@@ -54,6 +55,7 @@ abstract class Trie{
 
     reconstruyendoPosibilidades(t, "")
   }
+
   def pertenece(s: String, t: Trie): Boolean = {
          t match {
             case Nodo( c , m , lt ) => {
