@@ -23,10 +23,16 @@ object App{
 	def main(args: Array[String]): Unit = {
 
 		//Corriendo las pruebas
-		for (i <- 2 to 11) {
-            println(desempenoDeFuncionesParalelas(i))
-        }
+		// for (i <- 2 to 11) {
+        //     println(desempenoDeFuncionesParalelas(i))
+        // }
 		//println(desempenoDeFunciones(10))
 
-    }
+
+		for {
+		  	i <- 2 to 15
+			val cadena = crearADN(i)
+			val oraculo = oraculoFunc(cadena)
+		} println((compararAlgoritmos(reconstruirCadenaTurboAcelerada, reconstruirCadenaTurboAceleradaParallel(5))(i, oraculo), "Tamanio: " + i))
+	}
 }

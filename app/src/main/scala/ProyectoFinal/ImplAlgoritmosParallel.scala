@@ -13,7 +13,7 @@ object  ImplAlgoritmosParallel {
                 listaCombinaciones.slice(0, mitad),
                 listaCombinaciones.slice(mitad, listaCombinaciones.size)
             )
-        }
+    }
 
     
     def tareaPorRecorrer(bloqueCombinaciones: Seq[String],oraculo: Oraculo) : Seq[String] = {

@@ -16,7 +16,7 @@ object BenchMark{
             Funcion1(n, oraculo)
         }
         val timeF2 = withWarmer(new Warmer.Default) measure {
-            Funcion2(n,oraculo)
+            Funcion2(n, oraculo)
         }
 
         val promedio = timeF1.value / timeF2.value
