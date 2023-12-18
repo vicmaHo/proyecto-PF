@@ -1,3 +1,4 @@
+
 \documentclass[conference]{IEEEtran}
 % \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
@@ -95,7 +96,7 @@
 \section{\textbf{Corrección de las funciones implementadas}}
 
 
-\subsection{\textbf{Definicion del Oráculo}}
+\subsection{\textbf{Definición del Oráculo}}
 \begin{lstlisting}
 type Oraculo = Seq[Char] => Boolean
 
@@ -125,9 +126,9 @@ def reconstruirCadenaIngenuo(n: Int, oraculo: Oraculo): Seq[Char] = {
 \end{lstlisting}
 
 \subsection{\textbf{Solución Ingenua Paralela}}
+Cabe aclarar que decidimos prescindir del uso de un umbral en nuestro análisis de paralelización para examinar detalladamente su comportamiento en los diversos tamaños estudiados.\\
 
-Para la solución ingenua paralela tuvimos dos enfoques, paralelización de datos y paralelización de tareas. Inicialmente notamos que la instrucción $for$ (que hace el recorrido analizando con el $oraculo$ cual de las cadenas pertenecientes a la lista de todas las combinaciones posibles es la correcta) podía ser dividida en varias partes. Si, por ejemplo, tenemos un tamaño de cadena $n=4$ eso nos arrojaría una lista de combinaciones $4^n$, para este ejemplo $ 4^4 = 256$ sería el tamaño de la lista, entonces podemos dividir esta lista de combinaciones en 4 partes, cada una de tamaño $64$, y con ello usar un $for$ para cada sub-lista de tamaño $64$ de forma paralela, de esta forma cada instrucción $for$ se ejecuta simultáneamente a las otras, lo que en teoría se traduce a menos tiempo para hallar la cadena correcta. Otro añadido es que se cambia la instrucción $for$ por un $filter$ que realiza la misma acción, hallar la cadena mediante el $oraculo$, pero gracias al $filter$ podemos usar paralelización de datos a la secuencia que se filtrara. De esta forma se usa una secuencia de datos paralela, aplicando paralelismo de datos, y cada comparación de las sub-listas de combinaciones se ejecuta de forma paralela.
-
+Para la solución ingenua paralela, adoptamos dos enfoques: paralelización de datos y paralelización de tareas. Inicialmente, observamos que la instrucción $for$ (que realiza el recorrido analizando con el $oraculo$ cuál de las cadenas pertenecientes a la lista de todas las combinaciones posibles es la correcta) podía dividirse en varias partes. Si, por ejemplo, tenemos un tamaño de cadena $n=4$, esto nos daría una lista de combinaciones de tamaño $4^n$. Para este ejemplo, $4^4 = 256$ sería el tamaño de la lista. Entonces, podemos dividir esta lista de combinaciones en 4 partes, cada una de tamaño $64$, y con ello usar un $for$ para cada sublista de tamaño $64$ de forma paralela. De esta manera, cada instrucción $for$ se ejecuta simultáneamente a las otras, lo que, en teoría, se traduce en menos tiempo para hallar la cadena correcta. Otra mejora es cambiar la instrucción $for$ por un $filter$ que realiza la misma acción de hallar la cadena mediante el $oraculo$, pero gracias al $filter$, podemos aplicar paralelización de datos a la secuencia que se filtrará. De esta forma, utilizamos una secuencia de datos paralela, aplicando paralelismo de datos, y cada comparación de las sublistas de combinaciones se ejecuta de forma paralela.
 \begin{lstlisting}
 //tarea de recorrido, recibe una porcion de la lista de combinaciones
 def tareaRecorrido(bloqueCombinaciones: Seq[String]) : Seq[Char] = {
@@ -148,9 +149,10 @@ val (resultado1, resultado2, resultado3, resultado4) = parallel(tareaRecorrido(b
 Finalmente elijo el resultado que no se encuentre vacío, ya que solo una $tareaRecorrido$ arrojará la cadena que se trata de reconstruir.
 
 \subsection{\textbf{Solución Mejorada}}
-Esta solucion utiliza un $oraculo$ para reconstruir una cadena de longitud $n$. Si n es par, genera combinaciones de subcadenas de $n/2$ y las concatena para obtener las combinaciones validas para el valor del oráculo. Si n es impar, hace lo mismo, pero con dos subcadenas de longitudes diferentes $n/2$  y $n-(n/2)$. Luego se utiliza una función auxiliar, $reconstruirCadenaMejoradoAux$, que realiza una recursión de cola para generar y acumular combinaciones correctas para el $oraculo$, la recursión se detiene cuando se alcanza  la longitud de $n=0$. En cada iteraciónm $n$ se reduce en $n-1$ y va acumulando las combinaciones válidas en un vector. 
 
-\newpage
+Esta solución utiliza un $oraculo$ para reconstruir una cadena de longitud $n$. Si $n$ es par, genera combinaciones de subcadenas de $n/2$ y las concatena para obtener las combinaciones válidas para el valor del $oraculo$. Si $n$ es impar, realiza el mismo proceso, pero con dos subcadenas de longitudes diferentes, $n/2$ y $n-(n/2)$. Luego, se utiliza una función auxiliar, $reconstruirCadenaMejoradoAux$, que realiza una recursión de cola para generar y acumular combinaciones correctas para el $oraculo$. La recursión se detiene cuando se alcanza una longitud de $n=0$. En cada iteración, $n$ se reduce en $n-1$ y se acumulan las combinaciones válidas en un vector.
+
+
 \begin{lstlisting}
 def reconstruirCadenaMejoradoAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int): Seq[String] = {
     if (n == 0) {
@@ -176,7 +178,7 @@ Finalmente, se busca cual es la cadena que coincide $100$\% con el $oraculo$ y s
 
 \subsection{\textbf{Solución Mejorada Paralela}}
 
-El añadido para la paralelización, consta de usar el mismo concepto que se uso en la reconstrucción ingenua paralela, dividir una tarea de recorrido en varias tareas y ejecutarlas paralelamente. En este caso se adapta para usarse dentro de la función $reconstruirCadenaMejoradoAux$ en la cual se parten la lista de combinaciones en dos usando la siguiente función
+El añadido para la paralelización consiste en aplicar el mismo concepto utilizado en la reconstrucción ingenua paralela: dividir una tarea de recorrido en varias tareas y ejecutarlas en paralelo. En este caso, se adapta para su uso dentro de la función $reconstruirCadenaMejoradoAux$, en la cual se divide la lista de combinaciones en dos utilizando la siguiente función:
 \begin{lstlisting}
 def separarCombinacion(listaCombinaciones: Seq[String]): (Seq[String],  Seq[String]) = {
     val mitad = listaCombinaciones.size / 2
@@ -209,7 +211,7 @@ reconstruirCadenaMejoradoParallelAux(combinaciones.head.toSeq, combinaciones.tai
 
 \end{lstlisting}
 
-También se hace uso de una paralelización en dos llamados, anteriormente se ejecutaban secuencialmente, pero notamos que podían ser ejecutados de forma paralela, esto sucede a la hora de verifcar el tamaño de la cadena, si este es impar se hace lo siguiente:
+También se implementa una paralelización en dos llamadas que anteriormente se ejecutaban secuencialmente. Observamos que podían ejecutarse de forma paralela, especialmente al verificar el tamaño de la cadena. Si este es impar, se realiza lo siguiente:
 \begin{lstlisting}
  val subCadenasCorrectas1 = reconstruirCadenaMejoradoAux( Seq(), Seq(), Seq(), n/2) 
  val subCadenasCorrectas2 = reconstruirCadenaMejoradoAux( Seq(), Seq(), Seq(), n-(n/2))
@@ -221,12 +223,12 @@ val (subCadenasCorrectas1, subCadenasCorrectas2) = parallel(reconstruirCadenaMej
 
 De esta forma se ejecutan paralelamente ahorrando algo de tiempo.
 
-\textbf{De esta misma forma se aplica la paralización a las soluciones Turbo, Turbo Mejorada y Turbo Acelerada, con las distintas particularidades de cada una, pero en general la paralelización es la misma}
+\textbf{De manera similar, se aplica la paralelización a las soluciones Turbo, Turbo Mejorada y Turbo Acelerada, cada una con sus distintas particularidades, pero en general, el enfoque de paralelización es el mismo.}
 
 \subsection{\textbf{Turbo Solución}}
-La lógica principal de esta solucion es similar a la versión mejorada, para longitudes pares, se generan y concatenan subcadenas correctas de $n/2$, y para longitudes impares, se hacen dos llamados recursivos con longitudes $n/2$ , $n-(n/2)$ y se combinan los resultados.
+La lógica principal de esta solución es similar a la versión mejorada, para longitudes pares, se generan y concatenan subcadenas correctas de $n/2$, y para longitudes impares, se hacen dos llamados recursivos con longitudes $n/2$ , $n-(n/2)$ y se combinan los resultados.
 
-La mejora radica en la condición de avance en la recursion que ahora lo hace de $n-2$ en vez de $n-1$. Este cambio evita llamados recursivos innecesarios y mejora la eficiencia del algoritmo.
+La mejora radica en la condición de avance en la recursión que ahora lo hace de $n-2$ en vez de $n-1$. Este cambio evita llamados recursivos innecesarios y mejora la eficiencia del algoritmo.
 
 \begin{lstlisting}
  def reconstruirCadenaTurboAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int): Seq[String] = {
@@ -247,7 +249,9 @@ La mejora radica en la condición de avance en la recursion que ahora lo hace de
 \end{lstlisting}
 
 \subsection{\textbf{Turbo Mejorada}}
-La lógica principal de esta solucion es practicamente igual a la versión Turbo. La mejora radica en la condición de avance en la recursion que ahora lo hace de $2^n$ en vez de $n-2$. Este cambio evita llamadas recursivas innecesarias y mejora la eficiencia del algoritmo.
+
+
+La lógica principal de esta solución es prácticamente igual a la versión Turbo. La mejora radica en la condición de avance en la recursión, que ahora se realiza de $2^n$ en lugar de $n-2$. Este cambio evita llamadas recursivas innecesarias y mejora la eficiencia del algoritmo.
 
 \newpage
 \begin{lstlisting}
@@ -272,7 +276,9 @@ def reconstruirCadenaTurboMejoradaAux(cadena: Seq[Char], combinaciones: Seq[Stri
 
 \subsection{\textbf{Turbo Acelerada}}
 
-La logica de esta solucion repite el mismo patron de la version turbo mejorada, hace una recursion de $2^n$ para reconstruir las cadenas validas y lograr un recorrido mas eficiente, la diferencia esta en que usamos un Trie para almacenar las cadenas validadas reconstruidas, haciendo uso de la funcion $arbolDeSufijos$ para volver la lista de cadenas validas en un arbol, por ultimo se recorre el arbol en busca de la cadena $100$\% correcta.
+
+
+La lógica de esta solución sigue el mismo patrón que la versión Turbo Mejorada, realizando una recursión de $2^n$ para reconstruir las cadenas válidas y lograr un recorrido más eficiente. La diferencia radica en que utilizamos un Trie para almacenar las cadenas reconstruidas validadas, haciendo uso de la función $arbolDeSufijos$ para convertir la lista de cadenas válidas en un árbol. Finalmente, se recorre el árbol en busca de la cadena $100\%$ correcta.
 
 La implementación de Trie que realizamos fue la siguiente:
 \begin{enumerate}
@@ -602,7 +608,7 @@ def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Ingenua Paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Ingenua Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.5254 & 0.9547 & 0.5503 \\
         3   & 0.2235 & 1.123  & 0.1990 \\
@@ -626,7 +632,7 @@ def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño} & \textbf{Mejorada} & \textbf{Mejorada Paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Mejorada} & \textbf{Mejorada Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.1611 & 0.2378 & 0.6775 \\
         3   & 0.2323 & 0.764  & 0.3041 \\
@@ -654,7 +660,7 @@ def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño} & \textbf{Turbo} & \textbf{Turbo Paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Turbo} & \textbf{Turbo Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.1796 & 0.2413 & 0.7443 \\
         3   & 0.1242 & 0.2947 & 0.4214 \\
@@ -681,7 +687,7 @@ def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño} & \textbf{Turbo Mejorada} & \textbf{Turbo Mejorada Paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Turbo Mejorada} & \textbf{Turbo Mejorada Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.1777 & 0.3736 & 0.4756 \\
         3   & 0.1099 & 0.3417 & 0.3216 \\
@@ -709,7 +715,7 @@ def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño} & \textbf{Turbo Acelerada} & \textbf{Turbo Acelerada Paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Turbo Acelerada} & \textbf{Turbo Acelerada Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.2388 & 0.4078 & 0.5856 \\
         3   & 0.2308 & 0.6855 & 0.3367 \\
@@ -747,52 +753,54 @@ def compararAlgoritmos(Funcion1:(Int,Oraculo) => Seq[Char], Funcion2:(Int,Oracul
 
 
 
-\textbf{Analisis comparativo de la solucion ingenua secuencial vs su version paralela}
+\textbf{Análisis comparativo de la solución ingenua secuencial VS su versión paralela}
 
-Al analizar la tabla de desempeños, se puede notar como a partir de una tamaño 5 la versión paralela comienza a ganar siempre en tiempos, pero en tamaños menores a 5 gana la versión normal. Esto probablemente se deba al costo que tiene paralelizar las 4 tareas, y es que en tamaños pequeños paralelizar tiene un efecto contrario ya que aumenta los tiempos. Ahora observando la tabla de comparación, se nota el mismo comportamiento, la solución paralela tiene una aceleración con respecto a la secuencial más o menos a partir de tamaños 5-6, de ahí en adelante siempre tendrá una ventaja sobre la versión secuencial\\
+Al analizar la tabla de desempeño, se puede notar que a partir de un tamaño de 5, la versión paralela comienza a superar consistentemente a la versión normal en términos de tiempos. Sin embargo, en tamaños menores a 5, la versión normal resulta más eficiente. Este fenómeno probablemente se deba al costo asociado con la paralelización de las 4 tareas, ya que en tamaños pequeños, la paralelización tiene un efecto contrario, aumentando los tiempos.
 
-
-\textbf{Analisis comparativo de la solucion mejorada secuencial vs su version paralela}
-
-El comportamiento de la paralelización acá resulta interesante, y es que al paralelizar de la forma en que lo hicimos, no se nota una mejora si no hasta tamaños a a partir de 9-10 en adelante. Por lo tanto se puede concluir que vale la pena paralelizar solo en casos en los que los tamaños son mayores a 9, en tamaños menores funciona mejor la versión secuencial. Esto puede deberse a que la implementación de la paralelización, diviendo en dos partes la tarea del for, funciona mejor en tamaños mucho más grandes, ya que las dos partes resultan más equilibradas y aprovechan mejor los recursos paralelos disponibles. Para tamaños de datos más pequeños, la versión secuencial del algoritmo puede superar en rendimiento a la paralelización debido a la sobrecarga asociada con la gestión de hilos y la división de tareas en conjuntos de datos más pequeños.\\
+Al observar la tabla de comparación, se evidencia el mismo comportamiento: la solución paralela muestra una aceleración con respecto a la solución secuencial, más notoria a partir de tamaños 5-6, y desde ese punto en adelante, siempre presenta una ventaja sobre la versión secuencial.\\
 
 
-\textbf{Analisis comparativo de la solucion turbo secuencial vs su version paralela}
+\textbf{Análisis comparativo de la solución mejorada secuencial VS su versión paralela}
 
-Al ver la tabla de comparaciones, notamos que para ciertos tamaños menores a 9-10 la paralización tiene efectos positivos, sin embargo al repetir varios veces las comparaciones nos dimos cuenta de que esto resulta ser un poco aleatorio, aveces mejora, aveces no mejora, aveces es en tamaño 4 otras en otros tamaños, por lo que notamos cierta aleatoriedad, para tamaños que son mayores a 10, la aceleración se estabiliza, dando como resultado que la versión paralela funciona mejor que la secuencial.\\
+El comportamiento de la paralelización aquí resulta interesante, ya que al paralelizar de la forma en que lo hicimos, no se observa una mejora significativa hasta tamaños a partir de 9-10 en adelante. Por lo tanto, se puede concluir que vale la pena paralelizar solo en casos en los que los tamaños son mayores a 9; en tamaños menores, la versión secuencial funciona mejor. Esto puede deberse a que la implementación de la paralelización, dividiendo en dos partes la tarea del bucle for, funciona mejor en tamaños mucho más grandes, donde las dos partes resultan más equilibradas y aprovechan mejor los recursos paralelos disponibles. Para tamaños de datos más pequeños, la versión secuencial del algoritmo puede superar en rendimiento a la paralelización debido a la sobrecarga asociada con la gestión de hilos y la división de tareas en conjuntos de datos más pequeños.\\
 
 
-\textbf{Analisis comparativo de la solucion turbo mejorada secuencial vs su version paralela}
+\textbf{Análisis comparativo de la solución turbo secuencial VS su versión paralela}
 
-En esta comparación vemos que sucede algo parecido a la compracion de la solución mejorada, en este caso, a partir de tamaños 8-9 la paralelización comienza a mejorar los tiempos.
+Al observar la tabla de comparaciones, notamos que para ciertos tamaños menores a 9-10, la paralelización tiene efectos positivos. Sin embargo, al repetir varias veces las comparaciones, nos dimos cuenta de que esto resulta ser un poco aleatorio; a veces mejora, a veces no mejora, y en ocasiones es en tamaño 4, otras veces en otros tamaños. Esta variabilidad sugiere cierta aleatoriedad. Para tamaños mayores a 10, la aceleración se estabiliza, dando como resultado que la versión paralela funcione mejor que la secuencial.\\
 
-Las anteriores tres comparaciones(Mejorada, Turbo y Turbo Mejorada) son muy similares, debido a que practicamente se implemento la misma paralelización en las 3.\\
 
-\textbf{Analisis comparativo de la solucion turbo acelerada secuencial vs su version paralela}
+\textbf{Análisis comparativo de la solución turbo mejorada secuencial VS su versión paralela}
 
-Se observa un patrón evidente en esta comparación, ya que desde el tamaño 2 hasta el tamaño 9, siempre se muestra una superioridad de la versión secuencial sobre la paralela. Sin embargo, al llegar al tamaño 10, comienza a notarse una diferencia cada vez más favorable en la versión paralela. Esto se debe principalmente al enfoque de árbol del algoritmo, donde al tener varios procesos independientes, solo se aprecia una mejora en la paralelización cuando el volumen de datos es lo suficientemente extenso. De lo contrario, en lugar de mejorar en el tiempo de ejecución, empeorará como se pudo apreciar.\\
+En esta comparación, observamos que ocurre algo similar a la comparación de la solución mejorada. En este caso, a partir de tamaños 8-9, la paralelización comienza a mejorar los tiempos.
 
-\textbf{Analisis comparativo de los algoritmos secuenciales}
+Las tres comparaciones anteriores (Mejorada, Turbo y Turbo Mejorada) son muy similares, ya que se implementó prácticamente la misma paralelización en las tres.\\
 
-Cuando observamos los resultados, notamos que, en general, la versión $Turbo Mejorada$ tiene los tiempos más bajos en comparación con las otras versiones. Indicando de esta manera que la $Turbo Mejorada$ es la mejor opcion para hacer la reconstruccion de cadenas.\\
+\textbf{Análisis comparativo de la solución turbo acelerada secuencial VS su versión paralela}
 
-\textbf{Analisis comparativo de los algoritmos paralelos}
+"Se observa un patrón evidente en esta comparación, ya que desde el tamaño 2 hasta el tamaño 9, siempre se muestra una superioridad de la versión secuencial sobre la paralela. Sin embargo, al llegar al tamaño 10, comienza a notarse una diferencia cada vez más favorable en la versión paralela. Esto se debe principalmente al enfoque de árbol del algoritmo, donde al tener varios procesos independientes, solo se aprecia una mejora en la paralelización cuando el volumen de datos es lo suficientemente extenso. De lo contrario, en lugar de mejorar en el tiempo de ejecución, empeorará, como se pudo apreciar.\\
 
-Teniendo en cuenta los resultados obtenidos, notamos que, se repitio el mismo patron, en general, la versión $Turbo Mejorada Paralela$ es la version mas eficiente en comparación con las otras versiones, ademas, cabe resaltar de que cada version mejoro su tiempo de ejecucion.\\
+\textbf{Análisis comparativo de los algoritmos secuenciales}
+
+Al observar los resultados, notamos que, en general, la versión Turbo Mejorada tiene los tiempos más bajos en comparación con las otras versiones, indicando de esta manera que la Turbo Mejorada es la mejor opción para realizar la reconstrucción de cadenas.\\
+\newpage
+\textbf{Análisis comparativo de los algoritmos paralelos}
+
+Teniendo en cuenta los resultados obtenidos, notamos que se repitió el mismo patrón: en general, la versión Turbo Mejorada Paralela es la más eficiente en comparación con las otras versiones. Además, cabe destacar que cada versión mejoró su tiempo de ejecución.\\
 
 \textbf{¿Las paralelizaciones sirvieron?}
 
-En general, se puede decir que las paralelizaciones lograron mejorar el tiempo de ejecucion de las soluciones, sin embargo, se debe tener en cuenta que esta mejoria solo se empieza a notar a partir de una cadena de tamaño 10, ya que a partir de ese tamaño la cantidad de datos son los suficientemente extensos para lograr apreciar una gran diferencia en el tiempo de ejecucion. 
+En general, se puede decir que las paralelizaciones lograron mejorar el tiempo de ejecución de las soluciones. Sin embargo, es importante tener en cuenta que esta mejora solo se empieza a notar a partir de una cadena de tamaño 10, ya que a partir de ese tamaño la cantidad de datos es lo suficientemente extensa para apreciar una gran diferencia en el tiempo de ejecución.
 
 \section{\textbf{Pruebas de software}}
 
 \href{https://github.com/vicmaHo/proyecto-PF}
-{Link del codigo Fuente} \\
+{Link del código Fuente} \\
 
 Las pruebas de software que realizamos fueron las siguientes:
 
 \subsection{Comprobación que los algoritmos reconstruyeran las cadenas de manera correcta}
-\subsection{Comparación de cada algoritmo secuencial con su version paralela}
+\subsection{Comparación de cada algoritmo secuencial con su versión paralela}
 \subsection{Evaluación de desempeño de todos los algoritmos}
 \subsection{Evaluación de desempeño de todos los algoritmos secuenciales}
 \subsection{Evaluación de desempeño de todos los algoritmos paralelos}
