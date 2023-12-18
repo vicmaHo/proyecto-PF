@@ -246,10 +246,10 @@ La mejora radica en la condición de avance en la recursion que ahora lo hace de
 }
 \end{lstlisting}
 
-\newpage
 \subsection{\textbf{Turbo Mejorada}}
 La lógica principal de esta solucion es practicamente igual a la versión Turbo. La mejora radica en la condición de avance en la recursion que ahora lo hace de $2^n$ en vez de $n-2$. Este cambio evita llamadas recursivas innecesarias y mejora la eficiencia del algoritmo.
 
+\newpage
 \begin{lstlisting}
 def reconstruirCadenaTurboMejoradaAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int,baseInicial:Int,potencia:Int): Seq[String] = {
     if ( baseInicial >= n && acumulador.length > 0) {
@@ -356,9 +356,11 @@ def generarPosibilidades(t: Trie): Seq[String] = {
 
 \end{lstlisting}
 
+
     \item Método $pertenece$:
     La función $pertenece$ verifica si una cadena pertenece al Trie. Utiliza recursión para recorrer el Trie y determinar si la cadena se encuentra en la estructura.
-    
+
+    \newpage
     \begin{lstlisting}
 def pertenece(s: String, t: Trie): Boolean = {
     t match {
@@ -408,7 +410,7 @@ arrojando el resultado que se verá a continuación.
 
 \subsection{\textbf{Desempeño de todas las soluciones}}
 
-Estas tres tablas representan una en realidad, pero por efectos visuales decidimos anexarla de esta manera
+Estas cuatro tablas representan una en realidad, pero por efectos visuales decidimos anexarla de esta manera
 
 
 
@@ -434,6 +436,7 @@ Estas tres tablas representan una en realidad, pero por efectos visuales decidim
 \end{table}
 
 \vspace{0.2cm}
+\newpage
 
 \begin{table}[h]
     \centering
@@ -525,7 +528,6 @@ De esta manera se calcularon los desempeños
 }
 \end{lstlisting}
 
-\newpage
 \subsection{\textbf{Desempeño de las soluciones secuenciales}}
 
 \begin{table}[h]
@@ -555,7 +557,7 @@ De esta manera se calcularon los desempeños
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Mejorada} & \textbf{Turbo} & \textbf{Turbo Mejorada} & \textbf{Turbo Acelerada} \\
+        \textbf{Tamaño} & \textbf{Ingenua Paralela} & \textbf{Mejorada Paralela} & \textbf{Turbo Paralela} & \textbf{Turbo Mejorada Paralela} & \textbf{Turbo Acelerada Paralela} \\
         \midrule
         2   & 0.33280 & 0.10646 & 0.10809 & 0.08803 & 0.17371 \\
         3   & 0.18621 & 0.11593 & 0.10569 & 0.10524 & 0.28257 \\
@@ -700,6 +702,7 @@ def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
 \end{table}
 
 \newpage
+
 \subsection{\textbf{Comparación de la solución Turbo Acelerada con la Turbo Acelerada Paralela}}
 \begin{table}[h]
     \centering
@@ -743,29 +746,43 @@ def compararAlgoritmos(Funcion1:(Int,Oraculo) => Seq[Char], Funcion2:(Int,Oracul
 \section{\textbf{Análisis comparativo de las diferentes soluciones y conclusiones}}
 
 
+
 \textbf{Analisis comparativo de la solucion ingenua secuencial vs su version paralela}
+
+Al analizar la tabla de desempeños, se puede notar como a partir de una tamaño 5 la versión paralela comienza a ganar siempre en tiempos, pero en tamaños menores a 5 gana la versión normal. Esto probablemente se deba al costo que tiene paralelizar las 4 tareas, y es que en tamaños pequeños paralelizar tiene un efecto contrario ya que aumenta los tiempos. Ahora observando la tabla de comparación, se nota el mismo comportamiento, la solución paralela tiene una aceleración con respecto a la secuencial más o menos a partir de tamaños 5-6, de ahí en adelante siempre tendrá una ventaja sobre la versión secuencial\\
 
 
 \textbf{Analisis comparativo de la solucion mejorada secuencial vs su version paralela}
 
+El comportamiento de la paralelización acá resulta interesante, y es que al paralelizar de la forma en que lo hicimos, no se nota una mejora si no hasta tamaños a a partir de 9-10 en adelante. Por lo tanto se puede concluir que vale la pena paralelizar solo en casos en los que los tamaños son mayores a 9, en tamaños menores funciona mejor la versión secuencial. Esto puede deberse a que la implementación de la paralelización, diviendo en dos partes la tarea del for, funciona mejor en tamaños mucho más grandes, ya que las dos partes resultan más equilibradas y aprovechan mejor los recursos paralelos disponibles. Para tamaños de datos más pequeños, la versión secuencial del algoritmo puede superar en rendimiento a la paralelización debido a la sobrecarga asociada con la gestión de hilos y la división de tareas en conjuntos de datos más pequeños.\\
+
 
 \textbf{Analisis comparativo de la solucion turbo secuencial vs su version paralela}
+
+Al ver la tabla de comparaciones, notamos que para ciertos tamaños menores a 9-10 la paralización tiene efectos positivos, sin embargo al repetir varios veces las comparaciones nos dimos cuenta de que esto resulta ser un poco aleatorio, aveces mejora, aveces no mejora, aveces es en tamaño 4 otras en otros tamaños, por lo que notamos cierta aleatoriedad, para tamaños que son mayores a 10, la aceleración se estabiliza, dando como resultado que la versión paralela funciona mejor que la secuencial.\\
 
 
 \textbf{Analisis comparativo de la solucion turbo mejorada secuencial vs su version paralela}
 
+En esta comparación vemos que sucede algo parecido a la compracion de la solución mejorada, en este caso, a partir de tamaños 8-9 la paralelización comienza a mejorar los tiempos.
+
+Las anteriores tres comparaciones(Mejorada, Turbo y Turbo Mejorada) son muy similares, debido a que practicamente se implemento la misma paralelización en las 3.\\
 
 \textbf{Analisis comparativo de la solucion turbo acelerada secuencial vs su version paralela}
 
-Se observa un patrón evidente en esta comparación, ya que desde el tamaño 2 hasta el tamaño 9, siempre se muestra una superioridad de la versión secuencial sobre la paralela. Sin embargo, al llegar al tamaño 10, comienza a notarse una diferencia cada vez más favorable en la versión paralela. Esto se debe principalmente al enfoque de árbol del algoritmo, donde al tener varios procesos independientes, solo se aprecia una mejora en la paralelización cuando el volumen de datos es lo suficientemente extenso. De lo contrario, en lugar de mejorar en el tiempo de ejecución, empeorará como se pudo apreciar.
+Se observa un patrón evidente en esta comparación, ya que desde el tamaño 2 hasta el tamaño 9, siempre se muestra una superioridad de la versión secuencial sobre la paralela. Sin embargo, al llegar al tamaño 10, comienza a notarse una diferencia cada vez más favorable en la versión paralela. Esto se debe principalmente al enfoque de árbol del algoritmo, donde al tener varios procesos independientes, solo se aprecia una mejora en la paralelización cuando el volumen de datos es lo suficientemente extenso. De lo contrario, en lugar de mejorar en el tiempo de ejecución, empeorará como se pudo apreciar.\\
 
 \textbf{Analisis comparativo de los algoritmos secuenciales}
 
+Cuando observamos los resultados, notamos que, en general, la versión $Turbo Mejorada$ tiene los tiempos más bajos en comparación con las otras versiones. Indicando de esta manera que la $Turbo Mejorada$ es la mejor opcion para hacer la reconstruccion de cadenas.\\
 
 \textbf{Analisis comparativo de los algoritmos paralelos}
 
+Teniendo en cuenta los resultados obtenidos, notamos que, se repitio el mismo patron, en general, la versión $Turbo Mejorada Paralela$ es la version mas eficiente en comparación con las otras versiones, ademas, cabe resaltar de que cada version mejoro su tiempo de ejecucion.\\
 
 \textbf{¿Las paralelizaciones sirvieron?}
+
+En general, se puede decir que las paralelizaciones lograron mejorar el tiempo de ejecucion de las soluciones, sin embargo, se debe tener en cuenta que esta mejoria solo se empieza a notar a partir de una cadena de tamaño 10, ya que a partir de ese tamaño la cantidad de datos son los suficientemente extensos para lograr apreciar una gran diferencia en el tiempo de ejecucion. 
 
 \section{\textbf{Pruebas de software}}
 
