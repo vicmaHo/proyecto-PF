@@ -16,13 +16,27 @@ import ProyectoFinal.taller4.BenchMark
 
 object App{
 
+    
     def main(args: Array[String]): Unit = {
 
-    val n = 6
-    val cadenaAleatoria = crearADN(n)
-    println("Tamaño de la cadena: " + n)
-    println("Cadena Aleatoria: " + cadenaAleatoria)
-    println(BenchMark.desempenoDeFunciones(n))
-  }
+    
+      
+
+    val n = 7
+
+    //val cadenaAleatoria = crearADN(n)
+    // val combin = generarCombinaciones(n)
+    // val (bloqu1, bloqu2) = separarCombinacion(combin)
+    // println("bloque1: " + bloqu1)
+    // println("bloque2: " + bloqu2)
+   //val oraculo = oraculoFunc(cadenaAleatoria)
+    // println("Tamaño de la cadena: " + n)
+  // println("Cadena Aleatoria: " + cadenaAleatoria)
+    //println("Resultados para mejorada paralela: "+ reconstruirCadenaMejoradoParallel(5)(n,oraculo) )
+
+    for (i <- 2 to 11) {
+        println(BenchMark.desempenoDeFunciones(i))
+     }
+     }
   
 }

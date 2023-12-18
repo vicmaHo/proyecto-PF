@@ -26,12 +26,12 @@ object BenchMark{
 
     def desempenoDeFunciones(tamanoCadena: Int): Vector[Double] = {
     println("Tamanio: " + tamanoCadena)
-    val cadenaAleatoria = crearADN(tamanoCadena)
-    val oraculo = oraculoFunc(cadenaAleatoria)
     
     val tiemposIngenua = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
-      val time = withWarmer(new Warmer.Default) measure {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        val time = withWarmer(new Warmer.Default) measure {
         reconstruirCadenaIngenuo(cadenaAleatoria.length, oraculo)
     }
       tiemposIngenua(i) = time.value
@@ -39,7 +39,9 @@ object BenchMark{
 
     val tiemposIngenuaPar = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
-      val time = withWarmer(new Warmer.Default) measure {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        val time = withWarmer(new Warmer.Default) measure {
         reconstruirCadenaIngenuoParallel(5)(cadenaAleatoria.length, oraculo)
       }
       tiemposIngenuaPar(i) = time.value
@@ -47,6 +49,9 @@ object BenchMark{
 
     val tiempoMejorado = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaMejorado(cadenaAleatoria.length, oraculo)
         }
@@ -55,6 +60,9 @@ object BenchMark{
 
     val tiempoMejoradoPar = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaMejoradoParallel(5)(cadenaAleatoria.length, oraculo)
         }
@@ -63,6 +71,9 @@ object BenchMark{
 
     val tiempoTurbo = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaTurbo(cadenaAleatoria.length, oraculo)
         }
@@ -71,6 +82,9 @@ object BenchMark{
 
     val tiempoTurboPar = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaTurboParallel(5)(cadenaAleatoria.length, oraculo)
         }
@@ -79,6 +93,9 @@ object BenchMark{
     
     val tiempoTurboMejorada = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaTurboMejorada(cadenaAleatoria.length, oraculo)
         }
@@ -87,6 +104,9 @@ object BenchMark{
 
     val tiempoTurboMejoradaPar = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaTurboMejoradaParallel(5)(cadenaAleatoria.length, oraculo)
         }
@@ -95,6 +115,9 @@ object BenchMark{
 
     val tiempoTurboAcelerada = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaTurboAcelerada(cadenaAleatoria.length, oraculo)
         }
@@ -102,6 +125,9 @@ object BenchMark{
     }
     val tiempoTurboAceleradaPar = (1 to 100).map(_ => 0.0).toArray
     for (i <- 0 until 100) {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        
         val time = withWarmer(new Warmer.Default) measure {
             reconstruirCadenaTurboAceleradaParallel(5)(cadenaAleatoria.length, oraculo)
         }
