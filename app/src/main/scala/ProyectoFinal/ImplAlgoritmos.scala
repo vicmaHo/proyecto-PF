@@ -33,16 +33,6 @@ object  ImplAlgoritmos {
         } yield cadena.toSeq
 
         cadenaEncontrada.head
-
-        // def reconstruirCadenaAux(cadena: Seq[Char], combinaciones: Seq[String]): Seq[Char] = {
-        //     if (oraculo(cadena) == true) {
-        //         cadena
-        //     } else {
-        //         reconstruirCadenaAux(combinaciones.head.toSeq, combinaciones.tail)
-        //     }
-        // }
-        // reconstruirCadenaAux(combinaciones.head.toSeq, combinaciones.tail)
-       
     }
 
     def reconstruirCadenaMejorado (n : Int , oraculo : Oraculo ): Seq[Char]= {

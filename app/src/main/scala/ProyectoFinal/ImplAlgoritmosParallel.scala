@@ -61,7 +61,7 @@ object  ImplAlgoritmosParallel {
 
         val resultadoCorrecto: Seq[Char] = encontrarResultadoNoVacio(Seq(resultado1, resultado2, resultado3, resultado4))
 
-        resultadoCorrecto
+        resultadoCorrecto.mkString
 
     }
     

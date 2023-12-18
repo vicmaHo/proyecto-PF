@@ -1,6 +1,5 @@
 package ProyectoFinal
 
-package taller4
 import org.scalameter.measure
 import org.scalameter.withWarmer
 import org.scalameter.Warmer
