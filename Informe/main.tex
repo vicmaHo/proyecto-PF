@@ -100,11 +100,49 @@ olvide senalar tambien que colecciones paralelas fueron utilizadas.}
 
 \subsection{\textbf{Solución Ingenua}}
 
+Para la solución ingenua, se genera una lista de combinaciones posibles para cadenas del tamaño de la que se desea hallar, posteriormente se recorre cada cadena de las combinaciones posibles y se le pregunta al $oraculo$ por esta, continua hasta finalizar y por ultimo se retorna el resultado.
+
+\begin{lstlisting}
+def reconstruirCadenaIngenuo(n: Int, oraculo: Oraculo): Seq[Char] = {
+    val combinaciones = generarCombinaciones(n)
+    val cadenaEncontrada = for {
+        cadena <- combinaciones
+        if oraculo(cadena) == true
+    } yield cadena.toSeq
+    
+    cadenaEncontrada.head
+}
+\end{lstlisting}
+
 \subsection{\textbf{Solución Ingenua Paralela}}
+
+Para la solución ingenua paralela tuvimos dos enfoques, paralelización de datos y paralelización de tareas. Inicialmente notamos que la instrucción $for$ (que hace el recorrido analizando con el $oraculo$ cual de las cadenas pertenecientes a la lista de todas las combinaciones posibles es la correcta) podía ser dividida en varias partes. Si, por ejemplo, tenemos un tamaño de cadena $n=4$ eso nos arrojaría una lista de combinaciones $4^n$, para este ejemplo $ 4^4 = 256$ sería el tamaño de la lista, entonces podemos dividir esta lista de combinaciones en 4 partes, cada una de tamaño $64$, y con ello usar un $for$ para cada sub-lista de tamaño $64$ de forma paralela, de esta forma cada instrucción $for$ se ejecuta simultáneamente a las otras, lo que en teoría se traduce a menos tiempo para hallar la cadena correcta. Otro añadido es que se cambia la instrucción $for$ por un $filter$ que realiza la misma acción, hallar la cadena mediante el $oraculo$, pero gracias al $filter$ podemos usar paralelización de datos a la secuencia que se filtrara. De esta forma se usa una secuencia de datos paralela, aplicando paralelismo de datos, y cada comparación de las sub-listas de combinaciones se ejecuta de forma paralela.
+
+\begin{lstlisting}
+//tarea de recorrido, recibe una porcion de la lista de combinaciones
+def tareaRecorrido(bloqueCombinaciones: Seq[String]) : Seq[Char] = {
+    val combinacionesFiltradas = bloqueCombinaciones.par.filter(oraculo(_) == true)
+    if (combinacionesFiltradas.isEmpty) {
+        Seq.empty[Char] 
+    } else {
+        val combinacion = combinacionesFiltradas.head
+        combinacion.toSeq
+    }  
+}
+// separo en bloques
+val (bloque1, bloque2, bloque3, bloque4) = separarCombinaciones(combinaciones)
+
+// Ejecuto las tareas sobre cada bloque
+val (resultado1, resultado2, resultado3, resultado4) = parallel(tareaRecorrido(bloque1), tareaRecorrido(bloque2), tareaRecorrido(bloque3), tareaRecorrido(bloque4))
+\end{lstlisting}
+Finalmente elijo el resultado que no se encuentre vacío, ya que solo una $tareaRecorrido$ arrojará la cadena que se trata de reconstruir.
 
 \subsection{\textbf{Solución Mejorada}}
 
 \subsection{\textbf{Solución Mejorada Paralela}}
+
+\textbf{Describo el funcionamiento que se implementa anterioremente}
+El añadido para la paralelización, consta de usar el mismo concepto de dividir el $for$ en varias tareas paralelas
 
 \subsection{\textbf{Turbo Solución}}
 
@@ -123,63 +161,157 @@ olvide senalar tambien que colecciones paralelas fueron utilizadas.}
 \section{\textbf{Desempeño  y comparación de las soluciones secuenciales y paralelas} }
 
 \textbf{Notita: Describir como se hicieron las pruebas de desempeño de los algoritmos}
-
+Para las pruebas de desempeño, usamos la función $desempenoFunciones$, la cual prueba cada algoritmo 100 veces con cadenas distintas y para distintos tamaños, al final se promedian los resultados de tiempo
+arrojando el resultado que se verá a continuación.
 
 \subsection{\textbf{Desempeño de todas las soluciones juntas}}
 
 Estas tres tablas representan una en realidad, pero por efectos visuales decidimos anexarla de esta manera
 
-\begin{center}
-\renewcommand{\arraystretch}{1}
-\begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
-    \toprule
-    \textbf{Tamaño de la matriz} & \textbf{Multiplicación secuencial} & \textbf{Multiplicación paralela}  \\
-    \midrule
-    2 & 0.023874999 & 0.08563700 \\
-    4 & 0.050001 & 0.084999 \\
-    8 & 0.122071 &  0.0621710 \\
-    16 & 0.091161 & 0.1137009 \\
-    32 & 0.611 & 0.3503369 \\
-    64 & 6.267858 & 3.0618850 \\
-    128 & 79.0450319 & 39.5588989 \\
-    \bottomrule
-\end{tabularx}
+% \begin{center}
+% \renewcommand{\arraystretch}{1}
+% \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+%     \toprule
+%     \textbf{Tamaño de la matriz} & \textbf{Multiplicación secuencial} & \textbf{Multiplicación paralela}  \\
+%     \midrule
+%     2 & 0.023874999 & 0.08563700 \\
+%     4 & 0.050001 & 0.084999 \\
+%     8 & 0.122071 &  0.0621710 \\
+%     16 & 0.091161 & 0.1137009 \\
+%     32 & 0.611 & 0.3503369 \\
+%     64 & 6.267858 & 3.0618850 \\
+%     128 & 79.0450319 & 39.5588989 \\
+%     \bottomrule
+% \end{tabularx}
+
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Ingenua Paralela} & \textbf{Mejorada} \\
+        \midrule
+        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
+        3   & 0.0247579992 & 0.109804999 & 0.129887006 \\
+        4   & 0.0386939998 & 0.486354006 & 0.215725003 \\
+        5  & 0.0933949998 & 2.657260997 & 1.437317997 \\
+        6  & 0.4390439993 & 21.21956999 & 9.674953 \\
+        7  & 5.3342230015 & 177.01692393 & 67.98518801 \\
+        8 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        9 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        10 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
 \vspace{0.2cm}
-\begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
-    \toprule
-    \textbf{Tamaño de la matriz} & \textbf{Multiplicación recursiva} & \textbf{Multiplicación recursiva paralela}  \\
-    \midrule
-    2 & 0.068845999 & 0.19054500 \\
-    4 & 0.050001 & 0.084999 \\
-    8 & 0.3908499 & 2.1938079 \\
-    16 & 2.5607809 & 10.3008589 \\
-    32 & 21.95624 & 54.2429610 \\
-    64 & 203.3763620 & 369.499269 \\
-    128 & 2491.38580 & 4278.7803739 \\
-    \bottomrule
-\end{tabularx}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Mejorada Paralela} & \textbf{Turbo Solución} & \textbf{Turbo Solución Paralela} \\
+        \midrule
+        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
+        3   & 0.0247579992 & 0.109804999 & 0.129887006 \\
+        4   & 0.0386939998 & 0.486354006 & 0.215725003 \\
+        5  & 0.0933949998 & 2.657260997 & 1.437317997 \\
+        6  & 0.4390439993 & 21.21956999 & 9.674953 \\
+        7  & 5.3342230015 & 177.01692393 & 67.98518801 \\
+        8 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        9 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        10 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
 \vspace{0.2cm}
-\begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
-    \toprule
-    \textbf{Tamaño de la matriz} & \textbf{Algoritmo Strassen} & \textbf{Algoritmo Strassen paralelo} \\
-    \midrule
-    2 & 0.02743 & 0.074569 \\
-    4 & 0.050001 & 0.084999 \\
-    8 & 0.26881499 & 0.1974020\\
-    16 & 2.0453940 &  1.0148579 \\
-    32 & 14.9977109 & 6.1366830 \\
-    64 & 129.294209 & 43.4983070 \\
-    128 & 1417.1652550 & 400.7371680 \\
-    \bottomrule
-\end{tabularx}
 
-\end{center}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Mejorada} & \textbf{Turbo Mejorada Paralela} & \textbf{Turbo Acelerada} \\
+        \midrule
+        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
+        3   & 0.0247579992 & 0.109804999 & 0.129887006 \\
+        4   & 0.0386939998 & 0.486354006 & 0.215725003 \\
+        5  & 0.0933949998 & 2.657260997 & 1.437317997 \\
+        6  & 0.4390439993 & 21.21956999 & 9.674953 \\
+        7  & 5.3342230015 & 177.01692393 & 67.98518801 \\
+        8 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        9 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        10 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\newpage
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Acelerada Paralela}  \\
+        \midrule
+        2   & 0.0381420016 \\
+        3   & 0.0247579992\\
+        4   & 0.0386939998 \\
+        5  & 0.0933949998 \\
+        6  & 0.4390439993 \\
+        7  & 5.3342230015 \\
+        8 & 43.635844 \\
+        9 & 43.635844 \\
+        10 & 43.635844 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+% \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+%     \toprule
+%     \textbf{Tamaño} & \textbf{Turbo Acelerada Paralela} & \textbf{Algoritmo Strassen paralelo} \\
+%     \midrule
+%     2 & 0.02743 \\
+%     3 & 0.050001\\
+%     4 & 0.26881499\\
+%     5 & 2.0453940 \\
+%     6 & 14.9977109  \\
+%     7 & 129.294209  \\
+%     8 & 1417.1652550 \\
+%     9 & 1417.1652550 \\
+%     10 & 1417.1652550 \\
+%     \bottomrule
+% \end{tabularx}\\
+
+
 
 De esta manera se calcularon los desempeños
 \begin{lstlisting}
- //codigo de calculo de desempenos del benchmark
+// Primera parte de la funcion
+ def desempenoDeFunciones(tamanoCadena: Int): Vector[Double] = {
+    println("Tamanio: " + tamanoCadena)
+
+    // repido 100 veces una reconstruccion para una cadena distinta y al final promedio los resultados, esto se repite para todas las funciones
+    val tiemposIngenua = (1 to 100).map(_ => 0.0).toArray
+    for (i <- 0 until 100) {
+    val time = withWarmer(new Warmer.Default) measure {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        reconstruirCadenaIngenuo(cadenaAleatoria.length, oraculo)
+    }
+    tiemposIngenua(i) = time.value
+    }
+    ...
+    ...
+
+    // resultado, promedios de todas las funciones
+     Vector(tiemposIngenua.sum / 100, tiemposIngenuaPar.sum / 100, tiempoMejorado.sum / 100, tiempoMejoradoPar.sum / 100, tiempoTurbo.sum / 100, tiempoTurboPar.sum / 100, tiempoTurboMejorada.sum / 100, tiempoTurboMejoradaPar.sum / 100, tiempoTurboAcelerada.sum / 100, tiempoTurboAceleradaPar.sum / 100)
+}
 \end{lstlisting}
 
 
@@ -191,17 +323,19 @@ De esta manera se calcularon los desempeños
 \begin{table}[h]
     \centering
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño de la matriz} & \textbf{Multiplicación secuencial} & \textbf{Multiplicación recursiva} & \textbf{Strassen} \\
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Mejorada} & \textbf{Turbo} & \textbf{Turbo Mejorada} & \textbf{Turbo Acelerada} \\
         \midrule
-        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
-        4   & 0.0247579992 & 0.109804999 & 0.129887006 \\
-        8   & 0.0386939998 & 0.486354006 & 0.215725003 \\
-        16  & 0.0933949998 & 2.657260997 & 1.437317997 \\
-        32  & 0.4390439993 & 21.21956999 & 9.674953 \\
-        64  & 5.3342230015 & 177.01692393 & 67.98518801 \\
-        128 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        2   & 0.0381 & 0.09390 & 0.03746& 0.09390& 0.0374 \\
+        3   & 0.02475 & 0.10980 & 0.12988 & 0.09390 & 0.0374 \\
+        4   & 0.03869 & 0.48635 & 0.2157  & 0.09390 & 0.0374\\
+        5  & 0.0933 & 2.65726 & 1.4373 & 0.09390 & 0.0374\\
+        6  & 0.43904& 21.2195 & 9.6749 & 0.09390 & 0.03746\\
+        7  & 5.33422 & 177.0169 & 67.9851  & 0.09390 & 0.03746\\
+        8 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        9 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        10 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -210,20 +344,23 @@ De esta manera se calcularon los desempeños
 \begin{table}[h]
     \centering
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño de la matriz} & \textbf{Multiplicación secuencial paralela} & \textbf{Multiplicación recursiva paralela} & \textbf{Strassen pararelo} \\
+        \textbf{Tamaño} & \textbf{Ingenua Paralela} & \textbf{Mejorada Paralela} & \textbf{Turbo Paralela} & \textbf{Turbo Mejorada Paralela} & \textbf{Turbo Acelerada Paralela} \\
         \midrule
-        2   & 0.0490440004 & 0.1274450003 & 0.08126299 \\
-        4   & 0.0294580005 & 0.2960579998 & 0.11990699 \\
-        8   & 0.0434640001 & 0.975459004 & 0.234464 \\
-        16  & 0.0934720003 & 5.341355 & 1.2639369999 \\
-        32  & 0.3401179999 & 31.503583 & 9.300731003 \\
-        64  & 3.744225994 & 230.046051001 & 54.591446995 \\
-        128 & 33.363751 & 1723.101270994 & 429.24941 \\
+        2   & 0.0381 & 0.09390 & 0.03746& 0.09390& 0.0374 \\
+        3   & 0.02475 & 0.10980 & 0.12988 & 0.09390 & 0.0374 \\
+        4   & 0.03869 & 0.48635 & 0.2157  & 0.09390 & 0.0374\\
+        5  & 0.0933 & 2.65726 & 1.4373 & 0.09390 & 0.0374\\
+        6  & 0.43904& 21.2195 & 9.6749 & 0.09390 & 0.03746\\
+        7  & 5.33422 & 177.0169 & 67.9851  & 0.09390 & 0.03746\\
+        8 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        9 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        10 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
         \bottomrule
     \end{tabularx}
 \end{table}
+
 
 \newpage
 De esta manera se calcularon los desempeños para las algoritmos secuenciales y paralelos:
@@ -239,18 +376,17 @@ De esta manera se calcularon los desempeños para las algoritmos secuenciales y 
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño de la matriz} & \textbf{Multiplicación secuencial} & \textbf{Multiplicación paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Ingenua Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.1941 & 0.3109 & 0.624316500482 \\
-        4   & 0.0969 & 0.1253 & 0.773343974461 \\
-        8   & 0.1558 & 0.512 & 0.304296874997 \\
-        16  & 16.8657 & 0.4238 & 39.7963662104 \\
-        32  & 1.0945 & 0.8826 & 1.24008610922 \\
-        64  & 9.3597 & 2.6625 & 3.51538028169 \\
-        128 & 74.3937 & 23.9784 & 3.1025297767 \\
-        256 & 582.3829 & 198.7335 & 2.93047171 \\
-        512 & 4811.1526 & 1559.8417 & 3.0843851 \\
-        1024 & 41274.5973 & 15009.3957 & 2.7499173 \\
+        3   & 0.0969 & 0.1253 & 0.773343974461 \\
+        4   & 0.1558 & 0.512 & 0.304296874997 \\
+        5  & 16.8657 & 0.4238 & 39.7963662104 \\
+        6  & 1.0945 & 0.8826 & 1.24008610922 \\
+        7  & 9.3597 & 2.6625 & 3.51538028169 \\
+        8 & 74.3937 & 23.9784 & 3.1025297767 \\
+        9 & 582.3829 & 198.7335 & 2.93047171 \\
+        10 & 4811.1526 & 1559.8417 & 3.0843851 \\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -262,23 +398,23 @@ De esta manera se calcularon los desempeños para las algoritmos secuenciales y 
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño de la matriz} & \textbf{recursiva} & \textbf{recursiva paralela} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Mejorada} & \textbf{Mejorada Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.4017 & 1.3084 & 0.3070162029 \\
-        4   & 0.3693 & 1.4949 & 0.2470399357 \\
-        8   & 1.4204 & 6.1935 & 0.2293372083 \\
-        16  & 3.5153 & 18.4654 & 0.1903722638 \\
-        32  & 128.1462 & 81.0312 & 1.5814427035 \\
-        64  & 289.9554 & 532.3358 & 0.5446851404 \\
-        128 & 2244.0366 & 2965.9211 & 0.756606977 \\
-        256 & 18234.863 & 21556.7414 & 0.845900716 \\
-        512 & 91069.015 & 110813.2341 & 0.821824358 \\
+        3   & 0.3693 & 1.4949 & 0.2470399357 \\
+        4   & 1.4204 & 6.1935 & 0.2293372083 \\
+        5  & 3.5153 & 18.4654 & 0.1903722638 \\
+        6  & 128.1462 & 81.0312 & 1.5814427035 \\
+        7  & 289.9554 & 532.3358 & 0.5446851404 \\
+        8 & 2244.0366 & 2965.9211 & 0.756606977 \\
+        9 & 18234.863 & 21556.7414 & 0.845900716 \\
+        10 & 91069.015 & 110813.2341 & 0.821824358 \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-Esta comparación la hicimos solo hasta un tamaño 512, porque despues de \textbf{17h 10m 41s} de estar haciendo la comparación, nos volvio a lanzar el error mencionado anteriormente \textbf{out of memory}
 
+\newpage
 
 \subsection{\textbf{Comparación de la solución Turbo con la Turbo Paralela}}
 \begin{table}[h]
@@ -286,26 +422,21 @@ Esta comparación la hicimos solo hasta un tamaño 512, porque despues de \textb
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño de la matriz} & \textbf{Strassen} & \textbf{Strassen paralelo} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Turbo} & \textbf{Turbo Paralela} & \textbf{Aceleración} \\
         \midrule
         2   & 0.7311 & 0.6296 & 1.16121346886 \\
-        4   & 0.7454 & 0.3804 & 1.95951629863 \\
-        8   & 1.4337 & 0.8821 & 1.62532592676 \\
-        16  & 9.8697 & 2.7326 & 3.61183488252 \\
-        32  & 27.3466 & 6.5672 & 4.16411865026 \\
-        64  & 149.8199 & 38.782 & 3.86312980248 \\
-        128 & 1187.6159 & 339.3482 & 3.4996970663 \\
-        256 & 8264.3622 & 2360.687 & 3.5008292924 \\
-        512 & 54366.4652 & 18073.1638 & 3.00813215 \\
-        1024 & 399360.8654 & 132219.4327 & 3.020440 \\
+        3   & 0.7454 & 0.3804 & 1.95951629863 \\
+        4   & 1.4337 & 0.8821 & 1.62532592676 \\
+        5  & 9.8697 & 2.7326 & 3.61183488252 \\
+        6  & 27.3466 & 6.5672 & 4.16411865026 \\
+        7  & 149.8199 & 38.782 & 3.86312980248 \\
+        8 & 1187.6159 & 339.3482 & 3.4996970663 \\
+        9 & 8264.3622 & 2360.687 & 3.5008292924 \\
+        10 & 54366.4652 & 18073.1638 & 3.00813215 \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-De esta manera se calcularon las comparaciones
-\begin{lstlisting}
-// codigo
-\end{lstlisting}
 
 \subsection{\textbf{Comparación de la solución Turbo Mejorada con la Turbo Mejorada Paralela}}
 \begin{table}[h]
@@ -313,62 +444,56 @@ De esta manera se calcularon las comparaciones
     \renewcommand{\arraystretch}{1.2}
     \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
         \toprule
-        \textbf{Tamaño de la matriz} & \textbf{Producto punto secuencial} & \textbf{Producto punto paralelo} & \textbf{Aceleracion} \\
+        \textbf{Tamaño} & \textbf{Turbo Mejorada} & \textbf{Turbo Mejorada Paralela} & \textbf{Aceleración} \\
         \midrule
-        $10^{1}$ & 0.0725 & 2.6356 & 0.02750796782\\
-        $10^{2}$ & 0.0677 & 1.3331 & 0.05078388718 \\
-        $10^{3}$ & 0.2188 & 1.2477 & 0.175362667307 \\
-        $10^{4}$ & 2.197 & 4.4658 & 0.49196112678 \\
-        $10^{5}$ & 8.7597 & 5.8216 & 1.50468943245 \\
-        $10^{6}$ & 27.6552 & 40.2081 & 0.68780171159 \\
-        $10^{7}$ & 338.2786 & 548.42 & 0.61682396703 \\
+        2   & 0.7311 & 0.6296 & 1.16121346886 \\
+        3   & 0.7454 & 0.3804 & 1.95951629863 \\
+        4   & 1.4337 & 0.8821 & 1.62532592676 \\
+        5  & 9.8697 & 2.7326 & 3.61183488252 \\
+        6  & 27.3466 & 6.5672 & 4.16411865026 \\
+        7  & 149.8199 & 38.782 & 3.86312980248 \\
+        8 & 1187.6159 & 339.3482 & 3.4996970663 \\
+        9 & 8264.3622 & 2360.687 & 3.5008292924 \\
+        10 & 54366.4652 & 18073.1638 & 3.00813215 \\
         \bottomrule
     \end{tabularx}
 \end{table}
+
+
+
+
+
+
+\subsection{\textbf{Comparación de la solución Turbo Acelerada con la Turbo Acelerada Paralela}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Acelerada} & \textbf{Turbo Acelerada Paralela} & \textbf{Aceleración} \\
+        \midrule
+        2   & 0.7311 & 0.6296 & 1.16121346886 \\
+        3   & 0.7454 & 0.3804 & 1.95951629863 \\
+        4   & 1.4337 & 0.8821 & 1.62532592676 \\
+        5  & 9.8697 & 2.7326 & 3.61183488252 \\
+        6  & 27.3466 & 6.5672 & 4.16411865026 \\
+        7  & 149.8199 & 38.782 & 3.86312980248 \\
+        8 & 1187.6159 & 339.3482 & 3.4996970663 \\
+        9 & 8264.3622 & 2360.687 & 3.5008292924 \\
+        10 & 54366.4652 & 18073.1638 & 3.00813215 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
 
 De esta manera se calcularon las comparaciones
 \begin{lstlisting}
 // codigo
 \end{lstlisting}
 
-
-\subsection{\textbf{Comparación de la solución Turbo Acelerada con la Turbo Acelerada Paralela}}
-
-
 \section{\textbf{Análisis comparativo de las diferentes soluciones y conclusiones}}
 
-\textbf{Analisis comparativo de multiplicacion secuencial vs multiplicacion paralelo}
-
-
-
-\textbf{Analisis comparativo de multiplicacion recursiva vs multiplicacion recursiva paralelo}
-
-
-\textbf{Analisis comparativo de strassen secuencial vs strassen paralelo}
-
-
-
-\textbf{Analisis comparativo de algoritmos secuenciales}
-
-
-
-\textbf{Analisis comparativo de algoritmos paralelos}
-
-
-
-\textbf{Analisis comparativo de producto punto secuencial vs producto punto paralelo}
-
-
-
-
-\textbf{¿Las paralelizaciones sirvieron?}
-
-
-
-\textbf{¿Es realmente mas eficiente el algoritmo de Strassen? }
-
-
-\textbf{¿No se puede concluir nada al respecto?} 
 
 
 % \begin{center}
@@ -379,21 +504,6 @@ De esta manera se calcularon las comparaciones
 %     Alemania & Berlín & 2.000.000 \\ \hline
 %     \end{tabular}
 %     \end{center}
-\section{\textbf{Pruebas de software}}
-
-\href{https://github.com/JAMM0118/taller4-pfc-2023-2/tree/Alejandro}
-{Link del codigo Fuente} \\
-
-Las pruebas de software que realizamos fueron las siguientes:
-
-\subsection{Comprobación que los algoritmos multiplicaran las matrices de manera correcta}
-\subsection{Comparación de cada algoritmo secuencial con su version paralela}
-\subsection{Comparación de los productos punto secuencial y paralelo}
-\subsection{Evaluación de desempeño de todos los algoritmos}
-\subsection{Evaluación de desempeño de todos los algoritmos secuenciales}
-\subsection{Evaluación de desempeño de todos los algoritmos paralelos}
-\subsection{Evaluación de desempeño de los productos punto secuencial y paralelo}
-
 
  
 \end{document}

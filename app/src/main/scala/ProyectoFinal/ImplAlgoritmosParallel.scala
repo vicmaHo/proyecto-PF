@@ -6,33 +6,29 @@ import  ImplAlgoritmos._
 
 object  ImplAlgoritmosParallel {
 
-
-
-    // def reconstruirCadenaIngenuoParallel1(umbral: Int)(n: Int, oraculo: Oraculo): Seq[Char] = {
-
-    //     // por definir umbral en tamanos menores a 5-6
-        
-    //     val combinaciones = generarCombinaciones(n)
-    //     val combinacionesFiltradas = combinaciones.par.filter(oraculo(_) == true)
-    //     val combinacion = combinacionesFiltradas.head
-    //     val cadenaEncontrada = combinacion.toSeq
-    //     cadenaEncontrada       
-    // }
-
-    def reconstruirCadenaIngenuoParallel(umbral: Int)(n: Int, oraculo: Oraculo): Seq[Char] = {
-
-        val combinaciones = generarCombinaciones(n)
-
-        def tareaRecorrido(bloqueCombinaciones: Seq[String]) : Seq[Char] = {
-            val combinacionesFiltradas = bloqueCombinaciones.par.filter(oraculo(_) == true)
-            if (combinacionesFiltradas.isEmpty) {
-                Seq.empty[Char] 
-            } else {
-                val combinacion = combinacionesFiltradas.head
-                combinacion.toSeq
-            }  
+    //Funciones Auxiliares Para la paralelización
+    def separarCombinacion(listaCombinaciones: Seq[String]): (Seq[String],  Seq[String]) = {
+            val mitad = listaCombinaciones.size / 2
+            (
+                listaCombinaciones.slice(0, mitad),
+                listaCombinaciones.slice(mitad, listaCombinaciones.size)
+            )
         }
 
+    
+    def tareaPorRecorrer(bloqueCombinaciones: Seq[String],oraculo: Oraculo) : Seq[String] = {
+        val cadenaEncontrada = for {
+        cadena <- bloqueCombinaciones
+        if oraculo(cadena) == true
+        } yield cadena
+        cadenaEncontrada
+    }
+
+
+    // Soluciones paralelas
+     def reconstruirCadenaIngenuoParallel(umbral: Int)(n: Int, oraculo: Oraculo): Seq[Char] = {
+
+        val combinaciones = generarCombinaciones(n)
         def separarCombinaciones(listaCombinaciones: Seq[String]): (Seq[String], Seq[String], Seq[String], Seq[String]) = {
             val mitad = listaCombinaciones.size / 2
             val cuarto1 = mitad / 2
@@ -45,6 +41,16 @@ object  ImplAlgoritmosParallel {
                 listaCombinaciones.slice(cuarto2, cuarto3),
                 listaCombinaciones.slice(cuarto3, listaCombinaciones.size)
             )
+        }
+
+        def tareaRecorrido(bloqueCombinaciones: Seq[String]) : Seq[Char] = {
+            val combinacionesFiltradas = bloqueCombinaciones.par.filter(oraculo(_) == true)
+            if (combinacionesFiltradas.isEmpty) {
+                Seq.empty[Char] 
+            } else {
+                val combinacion = combinacionesFiltradas.head
+                combinacion.toSeq
+            }  
         }
 
         val (bloque1, bloque2, bloque3, bloque4) = separarCombinaciones(combinaciones)
@@ -61,50 +67,36 @@ object  ImplAlgoritmosParallel {
         resultadoCorrecto
 
     }
-      def reconstruirCadenaMejoradoParallel(umbral: Int) (n : Int , oraculo : Oraculo ): Seq[Char]= {
+    
+    def reconstruirCadenaMejoradoParallel(umbral: Int) (n : Int , oraculo : Oraculo ): Seq[Char]= {
         def reconstruirCadenaMejoradoParallelAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int): Seq[String] = {
             if (n == 0) {
                 acumulador
             } else {
                 val combinaciones  = generarCombinaciones(n)    
+                val (bloque1, bloque2) = separarCombinacion(combinaciones)
                 
+                val (cadenaEncontrada1, cadenaEncontrada2) = parallel(tareaPorRecorrer(bloque1,oraculo), tareaPorRecorrer(bloque2,oraculo))
 
-                
-                def separarCombinacionesInterno(listaCombinaciones: Seq[String]): (Seq[String], Seq[String]) = {
-                    val mitad = listaCombinaciones.size / 2
-                    (
-                        listaCombinaciones.slice(0, mitad),
-                        listaCombinaciones.slice(mitad, listaCombinaciones.size),
-                    )
-                }
-
-                def tareaRecorrido(bloqueCombinaciones: Seq[String]) : Seq[String] = {
-                    val cadenaEncontrada = for {
-                    cadena <- bloqueCombinaciones
-                    if oraculo(cadena) == true
-                    } yield cadena
-
-                    cadenaEncontrada
-                }
-
-                val (bloque1, bloque2) = separarCombinacionesInterno(combinaciones)
-                val (cadenaEncontrada1, cadenaEncontrada2) = parallel(tareaRecorrido(bloque1), tareaRecorrido(bloque2))
                 val acumulacion = acumulador ++ (cadenaEncontrada1 ++ cadenaEncontrada2)
                 reconstruirCadenaMejoradoParallelAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-1)
                 }
+                
+                
         }
 
         if(n%2 == 0){
-            val subCadenasCorrectas = task(reconstruirCadenaMejoradoParallelAux( Seq(), Seq(), Seq(), n/2))
-
+            val subCadenasCorrectas = (reconstruirCadenaMejoradoParallelAux( Seq(), Seq(), Seq(), n/2))
              val posiblesCombinaciones =  for {
-                 subCadena1 <- subCadenasCorrectas.join()
-                 subCadena2 <- subCadenasCorrectas.join()
+                 subCadena1 <- subCadenasCorrectas
+                 subCadena2 <- subCadenasCorrectas
                  if (oraculo(subCadena1 + subCadena2) == true) && ((subCadena1 + subCadena2).length == n)
             } yield subCadena1 + subCadena2
             
             posiblesCombinaciones.mkString
+
         }else{
+
             val (subCadenasCorrectas1, subCadenasCorrectas2) = parallel(reconstruirCadenaMejoradoParallelAux( Seq(), Seq(), Seq(), n/2),
             reconstruirCadenaMejoradoParallelAux( Seq(), Seq(), Seq(), n-(n/2)))
             val posiblesCombinaciones = for {
@@ -125,22 +117,22 @@ object  ImplAlgoritmosParallel {
             } else {
                 val combinaciones  = generarCombinaciones(n)
                 
-                val cadenaEncontrada = for {
-                cadena <- combinaciones
-                if oraculo(cadena) == true
-                } yield cadena
-            
-                val acumulacion = acumulador ++ cadenaEncontrada
+                val (bloque1, bloque2) = separarCombinacion(combinaciones)
+                
+                val (cadenaEncontrada1, cadenaEncontrada2) = parallel(tareaPorRecorrer(bloque1,oraculo), tareaPorRecorrer(bloque2,oraculo))
+
+                val acumulacion = acumulador ++ (cadenaEncontrada1 ++ cadenaEncontrada2)
+                
                 reconstruirCadenaTurboParallelAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-2)
                 }
         }
 
         if(n%2 == 0){
-            val subCadenasCorrectas = task(reconstruirCadenaTurboParallelAux( Seq(), Seq(), Seq(), n/2))
+            val subCadenasCorrectas = (reconstruirCadenaTurboParallelAux( Seq(), Seq(), Seq(), n/2))
 
              val posiblesCombinaciones =  for {
-                 subCadena1 <- subCadenasCorrectas.join()
-                 subCadena2 <- subCadenasCorrectas.join()
+                 subCadena1 <- subCadenasCorrectas
+                 subCadena2 <- subCadenasCorrectas
                  if (oraculo(subCadena1 + subCadena2) == true) && ((subCadena1 + subCadena2).length == n)
             } yield subCadena1 + subCadena2
             
@@ -165,24 +157,23 @@ object  ImplAlgoritmosParallel {
                 acumulador
             } else {
                 val combinaciones  = generarCombinaciones(n)
+                val (bloque1, bloque2) = separarCombinacion(combinaciones)
                 
-                val cadenaEncontrada = for {
-                cadena <- combinaciones
-                if oraculo(cadena) == true
-                } yield cadena
-            
-                val acumulacion = acumulador ++ cadenaEncontrada
+                val (cadenaEncontrada1, cadenaEncontrada2) = parallel(tareaPorRecorrer(bloque1,oraculo), tareaPorRecorrer(bloque2,oraculo))
+
+                val acumulacion = acumulador ++ (cadenaEncontrada1 ++ cadenaEncontrada2)
+                
                 val base = math.pow(2,potencia).toInt
                 reconstruirCadenaTurboMejoradaParallelAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-base,base,potencia+1)
                 }
         }
 
         if(n%2 == 0){
-            val subCadenasCorrectas = task(reconstruirCadenaTurboMejoradaParallelAux( Seq(), Seq(), Seq(), n/2,2,1))
+            val subCadenasCorrectas = (reconstruirCadenaTurboMejoradaParallelAux( Seq(), Seq(), Seq(), n/2,2,1))
 
              val posiblesCombinaciones =  for {
-                 subCadena1 <- subCadenasCorrectas.join()
-                 subCadena2 <- subCadenasCorrectas.join()
+                 subCadena1 <- subCadenasCorrectas
+                 subCadena2 <- subCadenasCorrectas
                  if (oraculo(subCadena1 + subCadena2) == true) && ((subCadena1 + subCadena2).length == n)
             } yield subCadena1 + subCadena2
             
@@ -207,13 +198,12 @@ object  ImplAlgoritmosParallel {
                 acumulador
             } else {
                 val combinaciones  = generarCombinaciones(n)
+                val (bloque1, bloque2) = separarCombinacion(combinaciones)
                 
-                val cadenaEncontrada = for {
-                cadena <- combinaciones
-                if oraculo(cadena) == true
-                } yield cadena
-            
-                val acumulacion = acumulador ++ cadenaEncontrada
+                val (cadenaEncontrada1, cadenaEncontrada2) = parallel(tareaPorRecorrer(bloque1,oraculo), tareaPorRecorrer(bloque2,oraculo))
+
+                val acumulacion = acumulador ++ (cadenaEncontrada1 ++ cadenaEncontrada2)
+                
                 val base = math.pow(2,potencia).toInt
                 reconstruirCadenaTurboAceleradaParallelAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-base,base,potencia+1)
                 }
