@@ -18,10 +18,10 @@ abstract class Trie{
         }
     }
     def arbolDeSufijos(sufijos: Seq[String]): Trie = {
-    sufijos.foldLeft(Nodo(' ', false, List.empty[Trie]): Trie) { (trie, sufijo) =>
-      adicionar(trie, sufijo)
+      sufijos.foldLeft(Nodo(' ', false, List.empty[Trie]): Trie) { (trie, sufijo) =>
+        adicionar(trie, sufijo)
+      }
     }
-  }
    def adicionar(t: Trie, sufijo: String): Trie = sufijo.toList match {
     case Nil => t
     case x :: xs =>
@@ -43,42 +43,42 @@ abstract class Trie{
 
    def generarPosibilidades(t: Trie): Seq[String] = {
     def reconstruyendoPosibilidades(t: Trie, prefijo: String): Seq[String] = t match {
-      case Hoja(_, _) => Seq(prefijo)
-      case Nodo(_, _, hijos) =>
-        if (hijos.isEmpty) {
-          // Nodo sin hijos, devuelve solo el prefijo actual
-          Seq(prefijo)
-        } else {
-          hijos.flatMap(h => reconstruyendoPosibilidades(h, prefijo + raiz(h)))
-        }
+        case Hoja(_, _) => Seq(prefijo)
+        case Nodo(_, _, hijos) =>
+          if (hijos.isEmpty) {
+            // Nodo sin hijos, devuelve solo el prefijo actual
+            Seq(prefijo)
+          } else {
+            hijos.flatMap(h => reconstruyendoPosibilidades(h, prefijo + raiz(h)))
+          }
+      }
+
+      reconstruyendoPosibilidades(t, "")
     }
 
-    reconstruyendoPosibilidades(t, "")
+def pertenece(s: String, t: Trie): Boolean = {
+       t match {
+          case Nodo( c , m , lt ) => {
+              if ( s.isEmpty ) {
+                  m
+              } else {
+                  val ( hijos , resto ) = lt.partition( t => raiz( t ) == s.head )
+                  if ( hijos.isEmpty ) {
+                      false
+                  } else {
+                      pertenece(  s.tail,hijos.head  )
+                  }
+              }
+          }
+          case Hoja ( c , m ) => {
+              if ( s.isEmpty ) {
+                  m
+              } else {
+                  false
+              }
+          }
+      }
   }
-
-  def pertenece(s: String, t: Trie): Boolean = {
-         t match {
-            case Nodo( c , m , lt ) => {
-                if ( s.isEmpty ) {
-                    m
-                } else {
-                    val ( hijos , resto ) = lt.partition( t => raiz( t ) == s.head )
-                    if ( hijos.isEmpty ) {
-                        false
-                    } else {
-                        pertenece(  s.tail,hijos.head  )
-                    }
-                }
-            }
-            case Hoja ( c , m ) => {
-                if ( s.isEmpty ) {
-                    m
-                } else {
-                    false
-                }
-            }
-        }
-    }
 }
 case class Hoja ( car : Char , marcada : Boolean ) extends Trie
 case class Nodo ( car :Char , marcada : Boolean , hijos : List [ Trie ] ) extends Trie

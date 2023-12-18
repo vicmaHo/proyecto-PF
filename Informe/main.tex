@@ -1,0 +1,759 @@
+\documentclass[conference]{IEEEtran}
+% \IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{booktabs}  % Para líneas de alta calidad en las tablas
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,    % Activa la coloración de enlaces
+    linkcolor=black,    % Color de enlaces internos (por ejemplo, índice)
+    urlcolor=blue,      % Color de enlaces a URLs
+    citecolor=red       % Color de enlaces de citas bibliográficas
+}
+
+% \usepackage{geometry}
+% \usepackage{graphicx}
+% \geometry{letterpaper, top = 2.5cm, right = 2.5cm, left = 2.5cm, bottom = 2.5cm}
+
+
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,%
+    else,extends,false,final,finally,%
+    for,if,implicit,import,match,mixin,%
+    new,null,object,override,package,%
+    private,protected,requires,return,sealed,%
+    super,this,throw,trait,true,try,%
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]"""
+}
+\lstset{
+  language=scala,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries\color{blue},
+  commentstyle=\itshape\color{green!60!black},
+  stringstyle=\color{orange},
+  % numbers=left,
+  % numberstyle=\tiny\color{gray},
+  % stepnumber=1,
+  % numbersep=5pt,
+  backgroundcolor=\color{gray!5},
+  frame=single,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+  breakatwhitespace=false,
+  escapeinside={\%*}{*)},
+}
+
+    
+\begin{document}
+
+\title{\huge \textsc{Informe Proyecto Final Programación Funcional y Concurrente - Problema de la Reconstrucción de ADN}\\
+%{\footnotesize \textsuperscript{*}Note: Sub-titles are not captured in Xplore and
+%should not be used}
+%\thanks{Identify applicable funding agency here. If none, delete this.}
+}
+
+\author{\IEEEauthorblockN{Víctor Manuel Hernández Ortiz}
+\IEEEauthorblockA{\textit{2259520} \\
+\textit{Universidad Del Valle}\\}
+\and
+\IEEEauthorblockN{Jhon Alejandro Martinez Murillo}
+\IEEEauthorblockA{\textit{2259565} \\
+\textit{Universidad Del Valle}\\
+}
+}
+
+\maketitle
+
+
+
+
+\section{\textbf{Corrección de las funciones implementadas}}
+
+
+\subsection{\textbf{Definicion del Oráculo}}
+\begin{lstlisting}
+type Oraculo = Seq[Char] => Boolean
+
+def oraculoFunc(cadena: Seq[Char]): Oraculo = {
+    (subcadena: Seq[Char]) => 
+    cadena.mkString.contains(subcadena.mkString)
+    }
+}
+\end{lstlisting}
+
+La función $oraculoFunc$ actúa como un generador de oráculos que permiten verificar la presencia de subcadenas específicas en una cadena principal dada.
+
+\subsection{\textbf{Solución Ingenua}}
+
+Para la solución ingenua, se genera una lista de combinaciones posibles para cadenas del tamaño de la que se desea hallar, posteriormente se recorre cada cadena de las combinaciones posibles y se le pregunta al $oraculo$ por esta, continua hasta finalizar y por ultimo se retorna el resultado.
+
+\begin{lstlisting}
+def reconstruirCadenaIngenuo(n: Int, oraculo: Oraculo): Seq[Char] = {
+    val combinaciones = generarCombinaciones(n)
+    val cadenaEncontrada = for {
+        cadena <- combinaciones
+        if oraculo(cadena) == true
+    } yield cadena.toSeq
+    
+    cadenaEncontrada.head
+}
+\end{lstlisting}
+
+\subsection{\textbf{Solución Ingenua Paralela}}
+
+Para la solución ingenua paralela tuvimos dos enfoques, paralelización de datos y paralelización de tareas. Inicialmente notamos que la instrucción $for$ (que hace el recorrido analizando con el $oraculo$ cual de las cadenas pertenecientes a la lista de todas las combinaciones posibles es la correcta) podía ser dividida en varias partes. Si, por ejemplo, tenemos un tamaño de cadena $n=4$ eso nos arrojaría una lista de combinaciones $4^n$, para este ejemplo $ 4^4 = 256$ sería el tamaño de la lista, entonces podemos dividir esta lista de combinaciones en 4 partes, cada una de tamaño $64$, y con ello usar un $for$ para cada sub-lista de tamaño $64$ de forma paralela, de esta forma cada instrucción $for$ se ejecuta simultáneamente a las otras, lo que en teoría se traduce a menos tiempo para hallar la cadena correcta. Otro añadido es que se cambia la instrucción $for$ por un $filter$ que realiza la misma acción, hallar la cadena mediante el $oraculo$, pero gracias al $filter$ podemos usar paralelización de datos a la secuencia que se filtrara. De esta forma se usa una secuencia de datos paralela, aplicando paralelismo de datos, y cada comparación de las sub-listas de combinaciones se ejecuta de forma paralela.
+
+\begin{lstlisting}
+//tarea de recorrido, recibe una porcion de la lista de combinaciones
+def tareaRecorrido(bloqueCombinaciones: Seq[String]) : Seq[Char] = {
+    val combinacionesFiltradas = bloqueCombinaciones.par.filter(oraculo(_) == true)
+    if (combinacionesFiltradas.isEmpty) {
+        Seq.empty[Char] 
+    } else {
+        val combinacion = combinacionesFiltradas.head
+        combinacion.toSeq
+    }  
+}
+// separo en bloques
+val (bloque1, bloque2, bloque3, bloque4) = separarCombinaciones(combinaciones)
+
+// Ejecuto las tareas sobre cada bloque
+val (resultado1, resultado2, resultado3, resultado4) = parallel(tareaRecorrido(bloque1), tareaRecorrido(bloque2), tareaRecorrido(bloque3), tareaRecorrido(bloque4))
+\end{lstlisting}
+Finalmente elijo el resultado que no se encuentre vacío, ya que solo una $tareaRecorrido$ arrojará la cadena que se trata de reconstruir.
+
+\subsection{\textbf{Solución Mejorada}}
+Esta solucion utiliza un $oraculo$ para reconstruir una cadena de longitud $n$. Si n es par, genera combinaciones de subcadenas de $n/2$ y las concatena para obtener las combinaciones validas para el valor del oráculo. Si n es impar, hace lo mismo, pero con dos subcadenas de longitudes diferentes $n/2$  y $n-(n/2)$. Luego se utiliza una función auxiliar, $reconstruirCadenaMejoradoAux$, que realiza una recursión de cola para generar y acumular combinaciones correctas para el $oraculo$, la recursión se detiene cuando se alcanza  la longitud de $n=0$. En cada iteraciónm $n$ se reduce en $n-1$ y va acumulando las combinaciones válidas en un vector. 
+
+\newpage
+\begin{lstlisting}
+def reconstruirCadenaMejoradoAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int): Seq[String] = {
+    if (n == 0) {
+        acumulador
+    } else {
+        val combinaciones  = generarCombinaciones(n)
+                
+        val cadenaEncontrada = for {
+        cadena <- combinaciones
+        if oraculo(cadena) == true
+        } yield cadena
+            
+        val acumulacion = acumulador ++ cadenaEncontrada
+        reconstruirCadenaMejoradoAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-1)
+    }
+}
+
+\end{lstlisting}
+
+
+Finalmente, se busca cual es la cadena que coincide $100$\% con el $oraculo$ y se retorna dicha cadena.
+
+
+\subsection{\textbf{Solución Mejorada Paralela}}
+
+\textbf{Describo el funcionamiento que se implementa anterioremente}
+El añadido para la paralelización, consta de usar el mismo concepto de dividir el $for$ en varias tareas paralelas
+
+\subsection{\textbf{Turbo Solución}}
+La lógica principal de esta solucion es similar a la versión mejorada, para longitudes pares, se generan y concatenan subcadenas correctas de $n/2$, y para longitudes impares, se hacen dos llamados recursivos con longitudes $n/2$ , $n-(n/2)$ y se combinan los resultados.
+
+La mejora radica en la condición de avance en la recursion que ahora lo hace de $n-2$ en vez de $n-1$. Este cambio evita llamados recursivos innecesarios y mejora la eficiencia del algoritmo.
+
+\begin{lstlisting}
+ def reconstruirCadenaTurboAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int): Seq[String] = {
+    if (((n == 0 || n == 1) && acumulador.length > 0) || n < 0 ) {
+        acumulador
+    } else {
+        val combinaciones  = generarCombinaciones(n)
+                
+        val cadenaEncontrada = for {
+        cadena <- combinaciones
+        if oraculo(cadena) == true
+        } yield cadena
+            
+        val acumulacion = acumulador ++ cadenaEncontrada
+        reconstruirCadenaTurboAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-2)
+    }
+}
+\end{lstlisting}
+
+\subsection{\textbf{Turbo Solución Paralela}}
+
+\subsection{\textbf{Turbo Mejorada}}
+La lógica principal de esta solucion es practicamente igual a la versión Turbo. La mejora radica en la condición de avance en la recursion que ahora lo hace de $2^n$ en vez de $n-2$. Este cambio evita llamadas recursivas innecesarias y mejora la eficiencia del algoritmo.
+
+\begin{lstlisting}
+def reconstruirCadenaTurboMejoradaAux(cadena: Seq[Char], combinaciones: Seq[String], acumulador: Seq[String], n:Int,baseInicial:Int,potencia:Int): Seq[String] = {
+    if ( baseInicial >= n && acumulador.length > 0) {
+        acumulador
+    } else {
+        val combinaciones  = generarCombinaciones(n)
+                
+        val cadenaEncontrada = for {
+        cadena <- combinaciones
+        if oraculo(cadena) == true
+        } yield cadena
+            
+        val acumulacion = acumulador ++ cadenaEncontrada
+        val base = math.pow(2,potencia).toInt
+        reconstruirCadenaTurboMejoradaAux(combinaciones.head.toSeq, combinaciones.tail, acumulacion,n-base,base,potencia+1)
+    }
+}
+
+\end{lstlisting}
+
+
+\subsection{\textbf{Turbo Mejorada Paralela}}
+
+\subsection{\textbf{Turbo Acelerada}}
+
+La logica de esta solucion repite el mismo patron de la version turbo mejorada, hace una recursion de $2^n$ para reconstruir las cadenas validas y lograr un recorrido mas eficiente, la diferencia esta en que usamos un Trie para almacenar las cadenas validadas reconstruidas, haciendo uso de la funcion $arbolDeSufijos$ para volver la lista de cadenas validas en un arbol, por ultimo se recorre el arbol en busca de la cadena $100$\% correcta.
+
+La implementación de Trie que realizamos fue la siguiente:
+\begin{enumerate}
+    \item Método $raiz$:
+    La función $raiz$ determina el carácter de la raíz de un Trie. Dependiendo del tipo de nodo, ya sea $Nodo$ o $Hoja$, extrae el carácter correspondiente. Este método es esencial para identificar el inicio de cada rama del Trie.
+    \begin{lstlisting}
+def raiz( t : Trie ) : Char = {
+    t match {
+        case Nodo( c ,_ ,_ ) => c
+        case Hoja ( c ,_ ) => c
+    }
+} 
+    \end{lstlisting}
+
+
+    \item Método $cabezas$:
+    El método $cabezas$ devuelve una secuencia de caracteres representando las cabezas de los nodos descendientes. En el caso de un $Nodo$, se obtienen los caracteres de los hijos; para una $Hoja$, se devuelve el carácter de la hoja en una secuencia. Esto facilita la exploración de las posibles continuaciones de una cadena en el Trie.
+\begin{lstlisting}
+def cabezas( t : Trie ) : Seq [Char ] = {
+    t match {
+        case Nodo( _, _, lt ) => lt.map( t=>raiz( t ) )
+        case Hoja ( c ,_ ) => Seq [Char] ( c )
+    }
+}
+
+\end{lstlisting}
+\newpage
+    \item Método $arbolDeSufijos$:
+    La función $arbolDeSufijos$ crea un Trie a partir de una secuencia de sufijos. Utiliza la función $adicionar$ para construir gradualmente la estructura del Trie. Esta estrategia de construcción incremental permite manejar eficientemente grandes cantidades de datos.
+
+    \begin{lstlisting}
+def arbolDeSufijos(sufijos: Seq[String]): Trie = {
+  sufijos.foldLeft(Nodo(' ', false, List.empty[Trie]): Trie) { (trie, sufijo) =>
+    adicionar(trie, sufijo)
+  }
+}
+
+\end{lstlisting}
+
+    \item Método $adicionar$:
+    El método $adicionar$ agrega un sufijo al Trie. Hace uso de la recursión para manejar casos específicos de nodos, permitiendo así la construcción eficiente de la estructura del Trie. La función es fundamental para la creación dinámica del Trie a medida que se adicionan nuevos sufijos.
+
+\begin{lstlisting}
+def adicionar(t: Trie, sufijo: String): Trie = sufijo.toList match {
+ case Nil => t
+ case x :: xs =>
+   val nuevoHijo = Nodo(x, true, List.empty[Trie])
+   t match {
+     case Hoja(c, marcada) =>
+       Nodo(c, marcada, List(adicionar(nuevoHijo, xs.mkString)))
+     case Nodo(c, marcada, hijos) =>
+       val hijoExistente = hijos.find(h => raiz(h) == x)
+       val nuevosHijos = hijoExistente match {
+         case Some(h) =>
+           hijos.updated(hijos.indexOf(h), adicionar(h, xs.mkString))
+         case None =>
+           hijos :+ adicionar(nuevoHijo, xs.mkString)
+       }
+       Nodo(c, marcada, nuevosHijos)
+   }
+}
+
+\end{lstlisting}
+
+    \item Método $generarPosibilidades$:
+    La función $generarPosibilidades$ devuelve todas las cadenas posibles representadas por el Trie. Hace uso de la función auxiliar $reconstruyendoPosibilidades$, que explora recursivamente los caminos del Trie para generar combinaciones de caracteres. Este método proporciona una visión global de las cadenas almacenadas en el Trie.
+
+    \begin{lstlisting}
+def generarPosibilidades(t: Trie): Seq[String] = {
+   def reconstruyendoPosibilidades(t: Trie, prefijo: String): Seq[String] = t match {
+     case Hoja(_, _) => Seq(prefijo)
+     case Nodo(_, _, hijos) =>
+       if (hijos.isEmpty) {
+         Seq(prefijo)
+       } else {
+         hijos.flatMap(h => reconstruyendoPosibilidades(h, prefijo + raiz(h)))
+       }
+    }
+   reconstruyendoPosibilidades(t, "")
+ }
+
+
+\end{lstlisting}
+\newpage
+    \item Método $pertenece$:
+    La función $pertenece$ verifica si una cadena pertenece al Trie. Utiliza recursión para recorrer el Trie y determinar si la cadena se encuentra en la estructura.
+    
+    \begin{lstlisting}
+def pertenece(s: String, t: Trie): Boolean = {
+    t match {
+       case Nodo( c , m , lt ) => {
+           if ( s.isEmpty ) {
+               m
+           } else {
+               val ( hijos , resto ) = lt.partition( t => raiz( t ) == s.head )
+               if ( hijos.isEmpty ) {
+                   false
+               } else {
+                   pertenece(  s.tail,hijos.head  )
+               }
+           }
+       }
+       case Hoja ( c , m ) => {
+           if ( s.isEmpty ) {
+               m
+           } else {
+               false
+           }
+       }
+    }
+}
+
+\end{lstlisting}
+
+    \item Clase $Hoja$: Representa un nodo final en el Trie que almacena un carácter y una marca booleana indicando si la cadena hasta ese punto es completa.
+    \begin{lstlisting}
+case class Hoja ( car : Char , marcada : Boolean ) extends Trie
+
+\end{lstlisting}
+
+    \item  Clase $Nodo$: Representa un nodo interno en el Trie. Contiene un carácter, una marca booleana y una lista de hijos. La lista de hijos permite representar la estructura jerárquica del Trie.
+    \begin{lstlisting}
+case class Nodo ( car :Char , marcada : Boolean , hijos : List [ Trie ] ) extends Trie
+
+
+\end{lstlisting}
+
+\end{enumerate}
+
+
+
+
+\subsection{\textbf{Turbo Acelerada Paralela}}
+
+
+
+\section{\textbf{Desempeño  y comparación de las soluciones secuenciales y paralelas} }
+
+Para las pruebas de desempeño, usamos la función $desempenoFunciones$, la cual prueba cada algoritmo 100 veces con cadenas distintas y para distintos tamaños, al final se promedian los resultados de tiempo
+arrojando el resultado que se verá a continuación.
+
+\subsection{\textbf{Desempeño de todas las soluciones}}
+
+Estas tres tablas representan una en realidad, pero por efectos visuales decidimos anexarla de esta manera
+
+\newpage
+
+% \begin{center}
+% \renewcommand{\arraystretch}{1}
+% \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+%     \toprule
+%     \textbf{Tamaño de la matriz} & \textbf{Multiplicación secuencial} & \textbf{Multiplicación paralela}  \\
+%     \midrule
+%     2 & 0.023874999 & 0.08563700 \\
+%     4 & 0.050001 & 0.084999 \\
+%     8 & 0.122071 &  0.0621710 \\
+%     16 & 0.091161 & 0.1137009 \\
+%     32 & 0.611 & 0.3503369 \\
+%     64 & 6.267858 & 3.0618850 \\
+%     128 & 79.0450319 & 39.5588989 \\
+%     \bottomrule
+% \end{tabularx}
+
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Ingenua Paralela} & \textbf{Mejorada} \\
+        \midrule
+        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
+        3   & 0.0247579992 & 0.109804999 & 0.129887006 \\
+        4   & 0.0386939998 & 0.486354006 & 0.215725003 \\
+        5  & 0.0933949998 & 2.657260997 & 1.437317997 \\
+        6  & 0.4390439993 & 21.21956999 & 9.674953 \\
+        7  & 5.3342230015 & 177.01692393 & 67.98518801 \\
+        8 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        9 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        10 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\vspace{0.2cm}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Mejorada Paralela} & \textbf{Turbo Solución} & \textbf{Turbo Solución Paralela} \\
+        \midrule
+        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
+        3   & 0.0247579992 & 0.109804999 & 0.129887006 \\
+        4   & 0.0386939998 & 0.486354006 & 0.215725003 \\
+        5  & 0.0933949998 & 2.657260997 & 1.437317997 \\
+        6  & 0.4390439993 & 21.21956999 & 9.674953 \\
+        7  & 5.3342230015 & 177.01692393 & 67.98518801 \\
+        8 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        9 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        10 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\vspace{0.2cm}
+
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Mejorada} & \textbf{Turbo Mejorada Paralela} & \textbf{Turbo Acelerada} \\
+        \midrule
+        2   & 0.0381420016 & 0.093908998 & 0.03746996 \\
+        3   & 0.0247579992 & 0.109804999 & 0.129887006 \\
+        4   & 0.0386939998 & 0.486354006 & 0.215725003 \\
+        5  & 0.0933949998 & 2.657260997 & 1.437317997 \\
+        6  & 0.4390439993 & 21.21956999 & 9.674953 \\
+        7  & 5.3342230015 & 177.01692393 & 67.98518801 \\
+        8 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        9 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        10 & 43.635844 & 1463.531014998 & 506.11463989 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Acelerada Paralela}  \\
+        \midrule
+        2   & 0.0381420016 \\
+        3   & 0.0247579992\\
+        4   & 0.0386939998 \\
+        5  & 0.0933949998 \\
+        6  & 0.4390439993 \\
+        7  & 5.3342230015 \\
+        8 & 43.635844 \\
+        9 & 43.635844 \\
+        10 & 43.635844 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+% \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+%     \toprule
+%     \textbf{Tamaño} & \textbf{Turbo Acelerada Paralela} & \textbf{Algoritmo Strassen paralelo} \\
+%     \midrule
+%     2 & 0.02743 \\
+%     3 & 0.050001\\
+%     4 & 0.26881499\\
+%     5 & 2.0453940 \\
+%     6 & 14.9977109  \\
+%     7 & 129.294209  \\
+%     8 & 1417.1652550 \\
+%     9 & 1417.1652550 \\
+%     10 & 1417.1652550 \\
+%     \bottomrule
+% \end{tabularx}\\
+
+\newpage
+De esta manera se calcularon los desempeños
+\begin{lstlisting}
+// Primera parte de la funcion
+ def desempenoDeFunciones(tamanoCadena: Int): Vector[Double] = {
+    println("Tamanio: " + tamanoCadena)
+
+    // repido 100 veces una reconstruccion para una cadena distinta y al final promedio los resultados, esto se repite para todas las funciones
+    val tiemposIngenua = (1 to 100).map(_ => 0.0).toArray
+    for (i <- 0 until 100) {
+    val time = withWarmer(new Warmer.Default) measure {
+        val cadenaAleatoria = crearADN(tamanoCadena)
+        val oraculo = oraculoFunc(cadenaAleatoria)
+        reconstruirCadenaIngenuo(cadenaAleatoria.length, oraculo)
+    }
+    tiemposIngenua(i) = time.value
+    }
+    ...
+    ...
+
+    // resultado, promedios de todas las funciones
+     Vector(tiemposIngenua.sum / 100, tiemposIngenuaPar.sum / 100, tiempoMejorado.sum / 100, tiempoMejoradoPar.sum / 100, tiempoTurbo.sum / 100, tiempoTurboPar.sum / 100, tiempoTurboMejorada.sum / 100, tiempoTurboMejoradaPar.sum / 100, tiempoTurboAcelerada.sum / 100, tiempoTurboAceleradaPar.sum / 100)
+}
+\end{lstlisting}
+
+
+\subsection{\textbf{Desempeño de las soluciones secuenciales}}
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Mejorada} & \textbf{Turbo} & \textbf{Turbo Mejorada} & \textbf{Turbo Acelerada} \\
+        \midrule
+        2   & 0.0381 & 0.09390 & 0.03746& 0.09390& 0.0374 \\
+        3   & 0.02475 & 0.10980 & 0.12988 & 0.09390 & 0.0374 \\
+        4   & 0.03869 & 0.48635 & 0.2157  & 0.09390 & 0.0374\\
+        5  & 0.0933 & 2.65726 & 1.4373 & 0.09390 & 0.0374\\
+        6  & 0.43904& 21.2195 & 9.6749 & 0.09390 & 0.03746\\
+        7  & 5.33422 & 177.0169 & 67.9851  & 0.09390 & 0.03746\\
+        8 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        9 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        10 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{\textbf{Desempeño de las soluciones paralelas}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |>{\centering\arraybackslash}X |>{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Ingenua Paralela} & \textbf{Mejorada Paralela} & \textbf{Turbo Paralela} & \textbf{Turbo Mejorada Paralela} & \textbf{Turbo Acelerada Paralela} \\
+        \midrule
+        2   & 0.0381 & 0.09390 & 0.03746& 0.09390& 0.0374 \\
+        3   & 0.02475 & 0.10980 & 0.12988 & 0.09390 & 0.0374 \\
+        4   & 0.03869 & 0.48635 & 0.2157  & 0.09390 & 0.0374\\
+        5  & 0.0933 & 2.65726 & 1.4373 & 0.09390 & 0.0374\\
+        6  & 0.43904& 21.2195 & 9.6749 & 0.09390 & 0.03746\\
+        7  & 5.33422 & 177.0169 & 67.9851  & 0.09390 & 0.03746\\
+        8 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        9 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        10 & 43.635& 1463.5310 & 506.1146 & 0.09390 & 0.03746\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+\newpage
+De esta manera se calcularon los desempeños para las algoritmos secuenciales y paralelos:
+\begin{lstlisting}
+def desempenoDeFuncionesSecuenciales(tamanoCadena: Int): Vector[Double] = {
+  println("Tamanio: " + tamanoCadena)
+  
+  //Se repite este mismo patron para cada algoritmo tanto secuencial como paralelo
+  val tiempoMejorado = (1 to 100).map(_ => 0.0).toArray
+  for (i <- 0 until 100) {
+      val cadenaAleatoria = crearADN(tamanoCadena)
+      val oraculo = oraculoFunc(cadenaAleatoria)
+      val time = withWarmer(new Warmer.Default) measure {
+          reconstruirCadenaMejorado(cadenaAleatoria.length, oraculo)
+      }
+      tiempoMejorado(i) = time.value
+  }
+    Vector(tiempoIngenua.sum / 100,  tiempoMejorado.sum / 100, tiempoTurbo.sum / 100,
+     tiempoTurboMejorada.sum / 100, tiempoTurboAcelerada.sum / 100)
+  }
+
+\end{lstlisting}
+
+\section{\textbf{Comparación de las distintas soluciones y sus paralelas}}
+
+\subsection{\textbf{Comparación de la solución ingenua y la ingenua Paralela}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Ingenua} & \textbf{Ingenua Paralela} & \textbf{Aceleración} \\
+        \midrule
+        2   & 0.1941 & 0.3109 & 0.624316500482 \\
+        3   & 0.0969 & 0.1253 & 0.773343974461 \\
+        4   & 0.1558 & 0.512 & 0.304296874997 \\
+        5  & 16.8657 & 0.4238 & 39.7963662104 \\
+        6  & 1.0945 & 0.8826 & 1.24008610922 \\
+        7  & 9.3597 & 2.6625 & 3.51538028169 \\
+        8 & 74.3937 & 23.9784 & 3.1025297767 \\
+        9 & 582.3829 & 198.7335 & 2.93047171 \\
+        10 & 4811.1526 & 1559.8417 & 3.0843851 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+\subsection{\textbf{Comparación de la solución Mejorada y la Mejorada Paralela}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Mejorada} & \textbf{Mejorada Paralela} & \textbf{Aceleración} \\
+        \midrule
+        2   & 0.4017 & 1.3084 & 0.3070162029 \\
+        3   & 0.3693 & 1.4949 & 0.2470399357 \\
+        4   & 1.4204 & 6.1935 & 0.2293372083 \\
+        5  & 3.5153 & 18.4654 & 0.1903722638 \\
+        6  & 128.1462 & 81.0312 & 1.5814427035 \\
+        7  & 289.9554 & 532.3358 & 0.5446851404 \\
+        8 & 2244.0366 & 2965.9211 & 0.756606977 \\
+        9 & 18234.863 & 21556.7414 & 0.845900716 \\
+        10 & 91069.015 & 110813.2341 & 0.821824358 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+\newpage
+
+\subsection{\textbf{Comparación de la solución Turbo con la Turbo Paralela}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo} & \textbf{Turbo Paralela} & \textbf{Aceleración} \\
+        \midrule
+        2   & 0.7311 & 0.6296 & 1.16121346886 \\
+        3   & 0.7454 & 0.3804 & 1.95951629863 \\
+        4   & 1.4337 & 0.8821 & 1.62532592676 \\
+        5  & 9.8697 & 2.7326 & 3.61183488252 \\
+        6  & 27.3466 & 6.5672 & 4.16411865026 \\
+        7  & 149.8199 & 38.782 & 3.86312980248 \\
+        8 & 1187.6159 & 339.3482 & 3.4996970663 \\
+        9 & 8264.3622 & 2360.687 & 3.5008292924 \\
+        10 & 54366.4652 & 18073.1638 & 3.00813215 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+\subsection{\textbf{Comparación de la solución Turbo Mejorada con la Turbo Mejorada Paralela}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Mejorada} & \textbf{Turbo Mejorada Paralela} & \textbf{Aceleración} \\
+        \midrule
+        2   & 0.7311 & 0.6296 & 1.16121346886 \\
+        3   & 0.7454 & 0.3804 & 1.95951629863 \\
+        4   & 1.4337 & 0.8821 & 1.62532592676 \\
+        5  & 9.8697 & 2.7326 & 3.61183488252 \\
+        6  & 27.3466 & 6.5672 & 4.16411865026 \\
+        7  & 149.8199 & 38.782 & 3.86312980248 \\
+        8 & 1187.6159 & 339.3482 & 3.4996970663 \\
+        9 & 8264.3622 & 2360.687 & 3.5008292924 \\
+        10 & 54366.4652 & 18073.1638 & 3.00813215 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+
+
+
+
+\subsection{\textbf{Comparación de la solución Turbo Acelerada con la Turbo Acelerada Paralela}}
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabularx}{\linewidth}{>{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X |}
+        \toprule
+        \textbf{Tamaño} & \textbf{Turbo Acelerada} & \textbf{Turbo Acelerada Paralela} & \textbf{Aceleración} \\
+        \midrule
+        2   & 0.7311 & 0.6296 & 1.16121346886 \\
+        3   & 0.7454 & 0.3804 & 1.95951629863 \\
+        4   & 1.4337 & 0.8821 & 1.62532592676 \\
+        5  & 9.8697 & 2.7326 & 3.61183488252 \\
+        6  & 27.3466 & 6.5672 & 4.16411865026 \\
+        7  & 149.8199 & 38.782 & 3.86312980248 \\
+        8 & 1187.6159 & 339.3482 & 3.4996970663 \\
+        9 & 8264.3622 & 2360.687 & 3.5008292924 \\
+        10 & 54366.4652 & 18073.1638 & 3.00813215 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+
+De esta manera se calcularon las comparaciones
+\begin{lstlisting}
+def compararAlgoritmos(Funcion1:(Int,Oraculo) => Seq[Char], Funcion2:(Int,Oraculo) => Seq[Char])(n: Int,oraculo: Oraculo): (Double, Double, Double) = {
+    val timeF1 = withWarmer(new Warmer.Default) measure {
+        Funcion1(n, oraculo)
+    }
+    val timeF2 = withWarmer(new Warmer.Default) measure {
+        Funcion2(n,oraculo)
+    }
+    val promedio = timeF1.value / timeF2.value
+    (timeF1.value, timeF2.value, promedio)
+}
+\end{lstlisting}
+
+\section{\textbf{Análisis comparativo de las diferentes soluciones y conclusiones}}
+
+\textbf{Analisis comparativo de la solucion ingenua secuencial vs su version paralela}
+
+\textbf{Analisis comparativo de la solucion mejorada secuencial vs su version paralela}
+
+\textbf{Analisis comparativo de la solucion turbo secuencial vs su version paralela}
+
+\textbf{Analisis comparativo de la solucion turbo mejorada secuencial vs su version paralela}
+
+\textbf{Analisis comparativo de la solucion turbo acelerada secuencial vs su version paralela}
+
+\textbf{Analisis comparativo de los algoritmos secuenciales}
+
+\textbf{Analisis comparativo de los algoritmos paralelos}
+
+\textbf{¿Las paralelizaciones sirvieron?}
+
+\section{\textbf{Pruebas de software}}
+
+\href{https://github.com/vicmaHo/proyecto-PF}
+{Link del codigo Fuente} \\
+
+Las pruebas de software que realizamos fueron las siguientes:
+
+\subsection{Comprobación que los algoritmos reconstruyeran las cadenas de manera correcta}
+\subsection{Comparación de cada algoritmo secuencial con su version paralela}
+\subsection{Evaluación de desempeño de todos los algoritmos}
+\subsection{Evaluación de desempeño de todos los algoritmos secuenciales}
+\subsection{Evaluación de desempeño de todos los algoritmos paralelos}
+
+ 
+\end{document}

@@ -49,7 +49,7 @@ class TestApp extends AnyFunSuite{
     test("Prueba de la reconstruccion de cadenas ingenua vs ingenua paralela") { 
         println("Comparación de algoritmos")
         val prueba = for {
-            i <- 2 to 10
+            i <- 2 to 12
             cadena = crearADN(i)
             oraculo = oraculoFunc(cadena)
         } yield (compararAlgoritmos(reconstruirCadenaIngenuo,reconstruirCadenaIngenuoParallel(5))(i, oraculo),i)
@@ -59,7 +59,7 @@ class TestApp extends AnyFunSuite{
     test("Prueba de la reconstruccion de cadenas mejorada vs mejorada paralela") { 
         println("Comparación de algoritmos")
         val prueba = for {
-            i <- 2 to 10
+            i <- 2 to 12
             cadena = crearADN(i)
             oraculo = oraculoFunc(cadena)
         } yield (compararAlgoritmos(reconstruirCadenaMejorado,reconstruirCadenaMejoradoParallel(5))(i, oraculo),i)
@@ -69,7 +69,7 @@ class TestApp extends AnyFunSuite{
     test("Prueba de la reconstruccion de cadenas turbo vs turbo paralela") { 
         println("Comparación de algoritmos")
         val prueba = for {
-            i <- 2 to 10
+            i <- 2 to 12
             cadena = crearADN(i)
             oraculo = oraculoFunc(cadena)
         } yield (compararAlgoritmos(reconstruirCadenaTurbo,reconstruirCadenaTurboParallel(5))(i, oraculo), i)
@@ -79,7 +79,7 @@ class TestApp extends AnyFunSuite{
     test("Prueba de la reconstruccion de cadenas turbo mejorada vs turbo mejorada paralela") { 
         println("Comparación de algoritmos")
         val prueba = for {
-            i <- 2 to 10
+            i <- 2 to 12
             cadena = crearADN(i)
             oraculo = oraculoFunc(cadena)
         } yield (compararAlgoritmos(reconstruirCadenaTurboMejorada,reconstruirCadenaTurboMejoradaParallel(5))(i, oraculo), i)
@@ -89,7 +89,7 @@ class TestApp extends AnyFunSuite{
     test("Prueba de la reconstruccion de cadenas turbo acelerada vs turbo acelerada paralela") { 
         println("Comparación de algoritmos")
         val prueba = for {
-            i <- 2 to 10
+            i <- 2 to 12
             cadena = crearADN(i)
             oraculo = oraculoFunc(cadena)
         } yield (compararAlgoritmos(reconstruirCadenaTurboAcelerada,reconstruirCadenaTurboAceleradaParallel(5))(i, oraculo),i)
