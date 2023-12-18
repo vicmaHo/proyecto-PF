@@ -1,24 +1,18 @@
 /**
-  * Taller 3 - Programación Funcional
-  * Autores: <Estudiantes>
+  * Proyecto Final - Programación Funcional
+  * Autores: <Jhon Alejandro Martinez - 2259565  Victor Manuel Hernandez - 2259520>
   * Profesor: Carlos A Delgado
   */
 package ProyectoFinal
 
-import org.scalameter.measure
-import org.scalameter.withWarmer
-import org.scalameter.Warmer
+import ImplAlgoritmosParallel._
+import ImplAlgoritmos._
+import Oraculo._
+import BenchMark._
 
 object App{
 
-  def saludo() = "Proyecto Final"
-
-  def main(args: Array[String]): Unit = {
-    println(saludo())
-    println(
-      withWarmer(new Warmer.Default) measure {
-        (1 to 100000000).toArray
-      }
-    )
-  }
- }
+    
+    def main(args: Array[String]): Unit = {
+    }
+}
